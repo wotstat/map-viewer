@@ -1,0 +1,10 @@
+2026-09-07 18:56:09.140: INFO: [WOTSTAT_LOCAL_MAPS] Installed; open with F8 or ModsList
+2026-09-07 18:57:44.505: INFO: [WOTSTAT_LOCAL_MAPS] UI bridge ready
+2026-09-07 18:57:45.940: INFO: [WOTSTAT_LOCAL_MAPS] Own selector ready, maps=65
+2026-09-07 18:58:51.241: INFO: [WOTSTAT_LOCAL_MAPS] Own selector ready, maps=65
+2026-09-07 18:59:21.017: INFO: [WOTSTAT_LOCAL_MAPS] Loading geometry=23_westfeld mode=domination space=1073741826; Account retained
+2026-09-07 18:59:24.931: INFO: [WOTSTAT_LOCAL_MAPS] Native minimap attached path=_level0.root.view.instance11.minimap.entriesContainer entries=2
+2026-09-07 18:59:24.935: INFO: [WOTSTAT_LOCAL_MAPS] Local viewer ready; original minimap and camera attached
+2026-09-07 19:00:14.622: INFO: [WOTSTAT_LOCAL_MAPS] Returned: {'sameAccount': True, 'sameHangar': True, 'cleanupErrors': 0, 'sameEnvironment': True, 'sameVisibility': True, 'hangarReady': True, 'sameVehicle': True}
+2026-09-07 19:00:54.488: INFO: [WOTSTAT_LOCAL_MAPS] Own selector ready, maps=65
+2026-09-07 19:02:09.472: INFO: [WOTSTAT_LOCAL_MAPS] Own selector ready, maps=65

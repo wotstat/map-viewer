@@ -1,0 +1,11 @@
+2026-09-07 06:46:20.654: INFO: [WOTSTAT_LOCAL_MAPS] UI bridge ready
+2026-09-07 06:46:20.858: INFO: [WOTSTAT_LOCAL_MAPS] Selector attached: True, maps=65
+2026-09-07 06:47:07.963: INFO: [WOTSTAT_LOCAL_MAPS] Loading geometry=23_westfeld mode=bob space=1073741826; Account retained
+2026-09-07 06:47:09.966: INFO: [WOTSTAT_LOCAL_MAPS] Native minimap attached path=_level0.root.view.instance11.minimap.entriesContainer entries=2
+2026-09-07 06:47:09.967: INFO: [WOTSTAT_LOCAL_MAPS] Local viewer ready; original minimap and camera attached
+2026-09-07 06:49:11.819: INFO: [WOTSTAT_LOCAL_MAPS] Returned: {'sameAccount': True, 'sameHangar': True, 'cleanupErrors': 0, 'sameEnvironment': True, 'sameVisibility': True, 'hangarReady': True, 'sameVehicle': True}
+2026-09-07 06:49:27.732: INFO: [WOTSTAT_LOCAL_MAPS] Selector attached: True, maps=65
+2026-09-07 06:49:50.270: INFO: [WOTSTAT_LOCAL_MAPS] Loading geometry=251_br_battle_city3 mode=ctf space=1073741828; Account retained
+2026-09-07 06:49:54.932: INFO: [WOTSTAT_LOCAL_MAPS] Native minimap attached path=_level0.root.view.instance11.minimap.entriesContainer entries=1
+2026-09-07 06:49:54.933: INFO: [WOTSTAT_LOCAL_MAPS] Local viewer ready; original minimap and camera attached
+2026-09-07 06:50:42.472: INFO: [WOTSTAT_LOCAL_MAPS] Returned: {'sameAccount': True, 'sameHangar': True, 'cleanupErrors': 0, 'sameEnvironment': True, 'sameVisibility': True, 'hangarReady': True, 'sameVehicle': True}

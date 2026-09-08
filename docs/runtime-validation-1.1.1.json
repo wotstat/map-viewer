@@ -1,0 +1,300 @@
+{
+  "allPositionsPassed": true, 
+  "allReturnsPassed": true, 
+  "dropdownRows": [
+    1, 
+    2, 
+    4
+  ], 
+  "positions": [
+    {
+      "actual": [
+        12.0, 
+        50.0
+      ], 
+      "arena": 103, 
+      "expected": [
+        12, 
+        50
+      ], 
+      "name": "oder initial", 
+      "passed": true, 
+      "world": [
+        50, 
+        140, 
+        -260
+      ]
+    }, 
+    {
+      "actual": [
+        0.0, 
+        -0.05
+      ], 
+      "arena": 103, 
+      "expected": [
+        0, 
+        0
+      ], 
+      "name": "oder texture center", 
+      "passed": true, 
+      "world": [
+        -10, 
+        180, 
+        -10
+      ]
+    }, 
+    {
+      "actual": [
+        -38.0, 
+        -2.0
+      ], 
+      "arena": 103, 
+      "expected": [
+        -38, 
+        -2
+      ], 
+      "name": "oder west playable border", 
+      "passed": true, 
+      "world": [
+        -200, 
+        180, 
+        0
+      ]
+    }, 
+    {
+      "actual": [
+        61.95, 
+        -2.0
+      ], 
+      "arena": 103, 
+      "expected": [
+        62, 
+        -2
+      ], 
+      "name": "oder east playable border", 
+      "passed": true, 
+      "world": [
+        300, 
+        180, 
+        0
+      ]
+    }, 
+    {
+      "actual": [
+        0.0, 
+        -105.0
+      ], 
+      "arena": 103, 
+      "expected": [
+        0, 
+        -105
+      ], 
+      "name": "oder north edge", 
+      "passed": true, 
+      "world": [
+        -10, 
+        180, 
+        515
+      ]
+    }, 
+    {
+      "actual": [
+        0.0, 
+        104.95
+      ], 
+      "arena": 103, 
+      "expected": [
+        0, 
+        105
+      ], 
+      "name": "oder south edge", 
+      "passed": true, 
+      "world": [
+        -10, 
+        180, 
+        -535
+      ]
+    }, 
+    {
+      "actual": [
+        0.0, 
+        0.0
+      ], 
+      "arena": 102, 
+      "expected": [
+        0, 
+        0
+      ], 
+      "name": "siegfried center", 
+      "passed": true, 
+      "world": [
+        0, 
+        180, 
+        0
+      ]
+    }, 
+    {
+      "actual": [
+        0.0, 
+        -47.75
+      ], 
+      "arena": 102, 
+      "expected": [
+        0, 
+        -47.72727272727273
+      ], 
+      "name": "siegfried north playable border", 
+      "passed": true, 
+      "world": [
+        0, 
+        180, 
+        250
+      ]
+    }, 
+    {
+      "actual": [
+        0.0, 
+        47.7
+      ], 
+      "arena": 102, 
+      "expected": [
+        0, 
+        47.72727272727273
+      ], 
+      "name": "siegfried south playable border", 
+      "passed": true, 
+      "world": [
+        0, 
+        180, 
+        -250
+      ]
+    }, 
+    {
+      "actual": [
+        -105.0, 
+        0.0
+      ], 
+      "arena": 102, 
+      "expected": [
+        -105, 
+        0
+      ], 
+      "name": "siegfried west edge", 
+      "passed": true, 
+      "world": [
+        -550, 
+        180, 
+        0
+      ]
+    }, 
+    {
+      "actual": [
+        105.0, 
+        0.0
+      ], 
+      "arena": 102, 
+      "expected": [
+        105, 
+        0
+      ], 
+      "name": "siegfried east edge", 
+      "passed": true, 
+      "world": [
+        550, 
+        180, 
+        0
+      ]
+    }, 
+    {
+      "actual": [
+        0.0, 
+        0.0
+      ], 
+      "arena": 23, 
+      "expected": [
+        0, 
+        0
+      ], 
+      "name": "westfield center", 
+      "passed": true, 
+      "world": [
+        0, 
+        240, 
+        0
+      ]
+    }, 
+    {
+      "actual": [
+        63.0, 
+        42.0
+      ], 
+      "arena": 23, 
+      "expected": [
+        63, 
+        42
+      ], 
+      "name": "westfield southeast", 
+      "passed": true, 
+      "world": [
+        300, 
+        240, 
+        -200
+      ]
+    }, 
+    {
+      "actual": [
+        -63.050000000000004, 
+        -42.0
+      ], 
+      "arena": 23, 
+      "expected": [
+        -63, 
+        -42
+      ], 
+      "name": "westfield northwest", 
+      "passed": true, 
+      "world": [
+        -300, 
+        240, 
+        200
+      ]
+    }
+  ], 
+  "returns": [
+    {
+      "arena": 103, 
+      "cleanupErrors": 0, 
+      "hangarReady": true, 
+      "rootsRestored": true, 
+      "sameAccount": true, 
+      "sameEnvironment": true, 
+      "sameHangar": true, 
+      "sameVehicle": true, 
+      "sameVisibility": true
+    }, 
+    {
+      "arena": 102, 
+      "cleanupErrors": 0, 
+      "hangarReady": true, 
+      "rootsRestored": true, 
+      "sameAccount": true, 
+      "sameEnvironment": true, 
+      "sameHangar": true, 
+      "sameVehicle": true, 
+      "sameVisibility": true
+    }, 
+    {
+      "arena": 23, 
+      "cleanupErrors": 0, 
+      "hangarReady": true, 
+      "rootsRestored": true, 
+      "sameAccount": true, 
+      "sameEnvironment": true, 
+      "sameHangar": true, 
+      "sameVehicle": true, 
+      "sameVisibility": true
+    }
+  ], 
+  "selectorCloseButton": true, 
+  "version": "1.1.1"
+}

@@ -1,0 +1,7 @@
+.local/
+.build/
+dist/
+as3/libs/
+*.pyc
+*.pyo
+__pycache__/

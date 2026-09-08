@@ -1,0 +1,153 @@
+package wotstat.localmaps {
+    import flash.display.Sprite;
+    import flash.events.Event;
+    import flash.events.FocusEvent;
+    import flash.events.MouseEvent;
+    import flash.geom.Point;
+    import flash.text.TextField;
+    import flash.text.TextFormat;
+    import net.wg.gui.components.controls.CheckBox;
+    import net.wg.gui.components.controls.DropdownMenu;
+    import net.wg.gui.components.controls.Slider;
+    import scaleform.clik.data.DataProvider;
+    import scaleform.clik.events.ListEvent;
+    import scaleform.clik.events.SliderEvent;
+
+    public class DebugControl extends Sprite {
+        public var sectionID:String;
+        public var controlID:String;
+        public var rowHeight:int;
+        public var slider:Slider;
+        public var checkbox:CheckBox;
+        public var dropdown:DropdownMenu;
+        private var model:Object;
+        private var changed:Function;
+        private var updating:Boolean = false;
+        private var valueLabel:TextField;
+
+        public function DebugControl(section:String, data:Object, w:int, callback:Function) {
+            super();
+            sectionID = section; controlID = data.id; model = data; changed = callback;
+            name = 'control_' + controlID;
+            if (data.type == 'slider') {
+                label(data.label, 0, w - 96);
+                valueLabel = label('', w - 96, 96);
+                var format:TextFormat = valueLabel.defaultTextFormat;
+                format.align = 'right'; valueLabel.defaultTextFormat = format;
+                slider = App.utils.classFactory.getComponent('Slider', Slider);
+                slider.name = 'slider'; slider.y = 28; slider.width = w;
+                slider.minimum = data.min; slider.maximum = data.max;
+                slider.snapInterval = data.step; slider.snapping = false;
+                slider.liveDragging = true;
+                addChild(slider); slider.validateNow();
+                rowHeight = 61;
+            } else if (data.type == 'checkbox') {
+                checkbox = App.utils.classFactory.getComponent('CheckBox', CheckBox);
+                checkbox.name = 'checkbox'; checkbox.label = data.label; checkbox.width = w;
+                checkbox.textSize = 14;
+                addChild(checkbox); checkbox.validateNow();
+                rowHeight = 32;
+            } else {
+                label(data.label, 0, w);
+                dropdown = App.utils.classFactory.getComponent('DropdownMenuUI', DropdownMenu);
+                dropdown.name = 'dropdown'; dropdown.y = 26; dropdown.width = w;
+                dropdown.dropdown = 'DropdownMenu_ScrollingList';
+                dropdown.itemRenderer = 'DropDownListItemRendererSound';
+                dropdown.menuRowsFixed = false; dropdown.rowCount = 8;
+                dropdown.menuDirection = 'up';
+                dropdown.scrollBar = 'ScrollBar';
+                dropdown.dataProvider = new DataProvider(data.options);
+                addChild(dropdown); dropdown.validateNow();
+                rowHeight = 60;
+            }
+            setValue(data.value);
+            if (slider) {
+                slider.addEventListener(SliderEvent.VALUE_CHANGE, onChanged);
+                slider.addEventListener(Event.CHANGE, onChanged);
+            }
+            if (checkbox) checkbox.addEventListener(Event.SELECT, onChanged);
+            if (dropdown) {
+                dropdown.addEventListener(ListEvent.INDEX_CHANGE, onChanged);
+                dropdown.addEventListener(FocusEvent.FOCUS_IN, prepareDropdown);
+                addEventListener(MouseEvent.MOUSE_DOWN, prepareDropdown, true);
+            }
+            addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
+        }
+        private function label(text:String, left:int, w:int):TextField {
+            var field:TextField = App.textMgr.createTextField();
+            field.defaultTextFormat = new TextFormat('$FieldFont', 14, 0xC9C9B6);
+            field.embedFonts = true; field.selectable = false; field.mouseEnabled = false;
+            field.x = left; field.width = w; field.height = 24; field.text = text;
+            addChild(field); return field;
+        }
+        public function setValue(value:Object):void {
+            updating = true;
+            model.value = value;
+            if (slider) {
+                slider.value = Number(value);
+                valueLabel.text = String(Math.round(Number(value) * 100) / 100) + model.suffix;
+            } else if (checkbox) {
+                checkbox.selected = Boolean(value); checkbox.validateNow();
+            } else if (dropdown) {
+                for (var i:int = 0; i < model.options.length; ++i) {
+                    if (model.options[i].value === value) { dropdown.selectedIndex = i; break; }
+                }
+                dropdown.validateNow();
+            }
+            updating = false;
+        }
+        private function onChanged(event:Event):void {
+            if (updating) return;
+            var value:Object;
+            if (slider) {
+                if (slider.value <= model.min) value = model.min;
+                else if (slider.value >= model.max) value = model.max;
+                else value = Math.max(model.min, Math.min(model.max, model.min +
+                    Math.round((slider.value - model.min) / model.step) * model.step));
+            } else if (checkbox) value = checkbox.selected;
+            else {
+                if (dropdown.selectedIndex < 0) return;
+                value = model.options[dropdown.selectedIndex].value;
+            }
+            if (value !== model.value && changed != null) changed(sectionID, controlID, value);
+        }
+        private function onWheel(event:MouseEvent):void {
+            // A wheel adjustment must not also scroll the containing panel.
+            if (slider && slider.hitTestPoint(event.stageX, event.stageY, true)) event.stopPropagation();
+            if (dropdown && dropdown.hitTestPoint(event.stageX, event.stageY, true)) event.stopPropagation();
+        }
+        private function prepareDropdown(event:Event):void {
+            if (!dropdown || dropdown.isOpen()) return;
+            var top:Number = dropdown.localToGlobal(new Point()).y / App.appScale;
+            var below:Number = App.appHeight - top - dropdown.height - 12;
+            var above:Number = top - 12;
+            var desired:Number = Math.min(8, model.options.length) * 24 + 8;
+            dropdown.menuDirection = below >= desired || below >= above ? 'down' : 'up';
+            var room:Number = dropdown.menuDirection == 'down' ? below : above;
+            dropdown.rowCount = Math.max(1, Math.min(8, Math.floor((room - 8) / 24)));
+        }
+        public function releaseInput():void {
+            if (dropdown) dropdown.close();
+        }
+        public function dispose():void {
+            releaseInput();
+            removeEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
+            if (slider) {
+                slider.removeEventListener(SliderEvent.VALUE_CHANGE, onChanged);
+                slider.removeEventListener(Event.CHANGE, onChanged);
+                slider.dispose(); slider = null;
+            }
+            if (checkbox) {
+                checkbox.removeEventListener(Event.SELECT, onChanged);
+                checkbox.dispose(); checkbox = null;
+            }
+            if (dropdown) {
+                dropdown.removeEventListener(ListEvent.INDEX_CHANGE, onChanged);
+                dropdown.removeEventListener(FocusEvent.FOCUS_IN, prepareDropdown);
+                removeEventListener(MouseEvent.MOUSE_DOWN, prepareDropdown, true);
+                dropdown.dispose(); dropdown = null;
+            }
+            changed = null; model = null; valueLabel = null;
+        }
+    }
+}

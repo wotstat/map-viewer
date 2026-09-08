@@ -1,0 +1,1 @@
+{"bob": {"sameAccount": true, "sameVehicle": true, "cleanupErrors": 0, "sameEnvironment": true, "sameVisibility": true, "sameHangar": true, "hangarReady": true}, "version": "1.1.0", "service": {"sameAccount": true, "sameHangar": true, "cleanupErrors": 0, "sameEnvironment": true, "sameVisibility": true, "hangarReady": true, "sameVehicle": true}, "sameGUIRoots": true}

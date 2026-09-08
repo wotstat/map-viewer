@@ -1,0 +1,66 @@
+{
+  "buttonClosedSelector": true, 
+  "catalogMaps": 65, 
+  "coldOpenReady": true, 
+  "cycles": [
+    {
+      "arena": 65559, 
+      "report": {
+        "cleanupErrors": 0, 
+        "hangarReady": true, 
+        "sameAccount": true, 
+        "sameEnvironment": true, 
+        "sameHangar": true, 
+        "sameVehicle": true, 
+        "sameVisibility": true
+      }, 
+      "rootsRestored": true
+    }
+  ], 
+  "escClosedSelector": true, 
+  "lastRowAccessible": true, 
+  "modeCounts": [
+    1, 
+    2, 
+    3, 
+    4, 
+    5, 
+    6, 
+    7, 
+    8
+  ], 
+  "openFrames": [
+    {
+      "geometry": [
+        0.0, 
+        0.0, 
+        826.0, 
+        390.0
+      ], 
+      "index": 0, 
+      "rows": 65, 
+      "selected": 97, 
+      "time": 220.68458557128906
+    }, 
+    {
+      "geometry": [
+        389.0, 
+        180.0, 
+        665.0, 
+        496.0
+      ], 
+      "index": 1, 
+      "rows": 65, 
+      "selected": 97, 
+      "time": 221.01258850097656
+    }
+  ], 
+  "rootsRestoredAfterWindows": true, 
+  "selectorClosedOnStart": true, 
+  "startedArena": 65559, 
+  "twoModeMap": 5024, 
+  "version": "1.2.0", 
+  "viewerGeometry": "23_westfeld", 
+  "viewerMode": "domination", 
+  "viewerReady": true
+}

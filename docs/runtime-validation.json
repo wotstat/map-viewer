@@ -1,0 +1,25 @@
+{
+  "arenaID": 2,
+  "geometry": "02_malinovka",
+  "hudReady": true,
+  "loadStatus": 1,
+  "minimapEntries": 3,
+  "mode": "ctf",
+  "playerClass": "PlayerAccount",
+  "return": {
+    "cleanupErrors": 0,
+    "hangarReady": true,
+    "sameAccount": true,
+    "sameEnvironment": true,
+    "sameHangar": true,
+    "sameVehicle": true,
+    "sameVisibility": true
+  },
+  "sameGuiRoots": true,
+  "version": "1.0.0",
+  "runtimeErrorLines": 0,
+  "lobbyInactiveDuringView": true,
+  "lobbyActiveAfterReturn": true,
+  "clientClosedAfterTest": true,
+  "artifactSha256": "d32552fa5197b036cc536d7bd9b3ae8d54576f1bf90c55c2f40f28c007d7cfcd"
+}

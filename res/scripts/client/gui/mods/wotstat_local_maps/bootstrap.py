@@ -216,6 +216,7 @@ def install():
     else:
         g_modsListApi.addModification(id='wotstat.local-maps', name=u'Локальный просмотр карт',
                                     description=u'Карты и свободная камера без создания боя. F8.',
-                                    icon='', enabled=True, login=False, lobby=True, callback=showSelector)
+                                    icon='gui/maps/wotstat/local_maps/modslist.png',
+                                    enabled=True, login=False, lobby=True, callback=showSelector)
     _installed = True
     log.info('Installed; open with F8 or ModsList')

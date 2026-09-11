@@ -6,6 +6,7 @@ if ($buildRoot -ne (Join-Path $projectRoot '.build')) { throw 'Invalid staging p
 if (Test-Path -LiteralPath $buildRoot) { Remove-Item -LiteralPath $buildRoot -Recurse -Force }
 New-Item -ItemType Directory -Path "$buildRoot\res\gui\flash", "$projectRoot\dist" -Force | Out-Null
 Copy-Item -LiteralPath "$projectRoot\res\scripts" -Destination "$buildRoot\res" -Recurse
+Copy-Item -LiteralPath "$projectRoot\res\gui\maps" -Destination "$buildRoot\res\gui" -Recurse
 $sdk = Join-Path $env:LOCALAPPDATA 'Programs\ApacheRoyale\0.9.12\royale-asjs'
 $env:JAVA_HOME = Join-Path $env:LOCALAPPDATA 'Programs\MicrosoftOpenJDK\21'
 & "$sdk\bin\mxmlc.bat" '-compiler.targets=SWF' '-target-player=17.0' '-swf-version=17' '-debug=false' "-compiler.source-path=$projectRoot\as3\src" "-compiler.external-library-path=$projectRoot\as3\libs,$sdk\frameworks\libs\player\17.0\playerglobal.swc" "-output=$buildRoot\res\gui\flash\wotstatLocalMaps.swf" "$projectRoot\as3\src\wotstat\localmaps\MapBridge.as"

@@ -1,8 +1,8 @@
 # coding: utf-8
 import BigWorld
+import GUI
 from gui.Scaleform.daapi.view.common.waiting_transitions import WaitingTransition, TransitionMode
 from gui.impl.gen import R
-from account_helpers.settings_core import settings_constants
 
 
 class LoadingCover(WaitingTransition):
@@ -22,7 +22,8 @@ class LoadingCover(WaitingTransition):
     def afterCreate(self):
         super(LoadingCover, self).afterCreate()
         self.movie.backgroundAlpha = 1.0
-        self.settingsCore.options.getSetting(settings_constants.GRAPHICS.INTERFACE_SCALE).updateScale()
+        width, height = GUI.screenResolution()[:2]
+        self.as_updateStageS(width, height, self.settingsCore.interfaceScale.get())
         # Allow the initialized movie to reach the screen before blocking IO.
         self._callback = BigWorld.callback(0.15, self._run)
 

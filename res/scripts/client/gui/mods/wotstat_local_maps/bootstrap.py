@@ -12,6 +12,7 @@ from gui.Scaleform.framework.managers.loaders import SFViewLoadParams
 from gui.Scaleform.framework.entities.View import View, ViewKey
 from gui.Scaleform.framework.entities.abstract.AbstractWindowView import AbstractWindowView
 from .catalog import loadCatalog
+from .localization import text, texts
 
 log = logging.getLogger('WOTSTAT_LOCAL_MAPS')
 SELECTOR = 'wotstatLocalMapsSelector'
@@ -56,7 +57,7 @@ class Selector(AbstractWindowView):
         global selector
         super(Selector, self)._populate()
         selector = self
-        self.flashObject.as_setData(self.rows)
+        self.flashObject.as_setData(self.rows, texts())
         log.info('Own selector ready, maps=%d', len(self.rows))
 
     def modeSelected(self, arenaID):
@@ -111,7 +112,7 @@ class BattleBridge(View):
                 from helpers import i18n
                 arena = session.arena
                 mode = displayName(i18n.makeString('#arenas:type/%s/name' % arena.gameplayName), arena.gameplayName)
-                self.flashObject.as_setViewerData(displayName(arena.name, arena.geometryName), mode, g_registry.snapshot())
+                self.flashObject.as_setViewerData(displayName(arena.name, arena.geometryName), mode, g_registry.snapshot(), texts())
                 self.flashObject.as_setVisibility(session.interfaceVisible, session.minimapVisible)
                 g_registry.subscribe(self._settingsChanged)
                 self._settingsSubscribed = True
@@ -130,19 +131,6 @@ class BattleBridge(View):
     def loadingFailed(self, message):
         log.error('Native viewer controls loading failed: %s', message)
         BigWorld.callback(0.0, session.stop)
-
-    def nativeLibraryRequested(self):
-        import base64
-        import ResMgr
-        from .native_library import codeLibrary
-        try:
-            resource = ResMgr.openSection('gui/flash/lobby.swf')
-            if resource is None:
-                raise IOError('The native lobby movie is missing from the client')
-            self.flashObject.as_loadNativeLibrary(base64.b64encode(codeLibrary(resource.asBinary)))
-        except Exception:
-            log.exception('Native viewer library could not be read')
-            BigWorld.callback(0.0, session.stop)
 
     def settingChanged(self, sectionID, controlID, value):
         if session.active and session.cursorControl and not session.stopping:
@@ -214,8 +202,8 @@ def install():
     except ImportError:
         log.info('ModsList unavailable; use F8')
     else:
-        g_modsListApi.addModification(id='wotstat.local-maps', name=u'Локальный просмотр карт',
-                                    description=u'Карты и свободная камера без создания боя. F8.',
+        g_modsListApi.addModification(id='wotstat.local-maps', name=text('title'),
+                                    description=text('description'),
                                     icon='gui/maps/wotstat/local_maps/modslist.png',
                                     enabled=True, login=False, lobby=True, callback=showSelector)
     _installed = True

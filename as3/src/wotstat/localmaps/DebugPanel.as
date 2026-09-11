@@ -29,12 +29,15 @@ package wotstat.localmaps {
         private var contentHeight:int = 0;
         private var viewHeight:int = 0;
         private var interactive:Boolean = false;
+        private var panelTitle:TextField;
+        private var mouseHint:TextField;
 
         public function DebugPanel() {
             super();
             name = 'debugPanel';
-            makeLabel(this, 'ПАРАМЕТРЫ ПРОСМОТРА', 14, 10, 17);
-            makeLabel(this, 'Ctrl — управление мышью', 14, 33, 12, 0x8F8F80);
+            panelTitle = makeLabel(this, '', 14, 10, 17);
+            mouseHint = makeLabel(this, '', 14, 33, 12, 0x8F8F80);
+            panelTitle.width = mouseHint.width = PANEL_W - 28;
             viewport.x = PANEL_INSET; viewport.y = 60;
             viewport.addChild(body); addChild(viewport);
             scrollBar = App.utils.classFactory.getComponent('ScrollBar', ScrollBar);
@@ -43,6 +46,17 @@ package wotstat.localmaps {
             scrollBar.addEventListener(Event.SCROLL, onScroll);
             addEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
             setInteractive(false);
+        }
+        public function setLabels(title:String, hint:String):void {
+            panelTitle.text = title;
+            mouseHint.text = hint;
+            var format:TextFormat = panelTitle.defaultTextFormat;
+            format.size = 17;
+            panelTitle.setTextFormat(format);
+            while (panelTitle.textWidth > panelTitle.width - 4 && Number(format.size) > 12) {
+                format.size = Number(format.size) - 1;
+                panelTitle.setTextFormat(format);
+            }
         }
         public function setSections(data:Array):void {
             releaseInput();
@@ -219,6 +233,7 @@ package wotstat.localmaps {
             scrollBar.removeEventListener(Event.SCROLL, onScroll);
             scrollBar.dispose(); scrollBar = null;
             changed = resized = beforeToggle = null; sections = null; collapsed = null;
+            panelTitle = mouseHint = null;
         }
     }
 }

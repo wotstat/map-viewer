@@ -1,4 +1,5 @@
 import os
+import shutil
 import py_compile
 import sys
 import zipfile
@@ -6,7 +7,7 @@ version = sys.argv[1]
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 stage = os.path.join(root, '.build')
 with open(os.path.join(stage, 'meta.xml'), 'wb') as output:
-    output.write('<root><id>wotstat.local-maps</id><version>%s</version><name>Local Maps RU</name><description>Local map viewer for MT RU 1.45</description></root>' % version)
+    output.write('<root><id>wotstat.local-maps</id><version>%s</version><name>Local Maps</name><description>Local map viewer for World of Tanks and Mir Tankov</description></root>' % version)
 for directory, unused, files in os.walk(stage):
     for name in files:
         if name.endswith('.py'):
@@ -25,3 +26,6 @@ with zipfile.ZipFile(artifact, 'w', zipfile.ZIP_STORED) as archive:
                 path = os.path.join(directory, name)
                 archive.write(path, os.path.relpath(path, stage).replace('\\', '/'))
 print(artifact)
+wotArtifact = os.path.splitext(artifact)[0] + '.wotmod'
+shutil.copyfile(artifact, wotArtifact)
+print(wotArtifact)

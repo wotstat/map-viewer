@@ -15,6 +15,7 @@ from gui.Scaleform.daapi.view.battle.shared.ingame_menu import IngameMenu
 from gui.Scaleform.framework.managers.loaders import SFViewLoadParams
 from gui.Scaleform.daapi.view.battle.shared.minimap.settings import TRANSFORM_FLAG
 from .minimap_bounds import getMinimapBounds
+from .localization import text
 
 log = logging.getLogger('WOTSTAT_LOCAL_MAPS')
 
@@ -28,6 +29,7 @@ class LocalSession(object):
         self._cameraSpeed = 60.0
         self.arena = None
         self.spaceID = None
+        self._space = None
         self.mappingID = None
         self._callback = None
         self._saved = None
@@ -65,7 +67,7 @@ class LocalSession(object):
         self._saved = dict(camera=BigWorld.camera(), fov=BigWorld.projection().fov,
                            cursorVisible=GUI.mcursor().visible, cursorClipped=GUI.mcursor().clipped,
                            spaceID=hangar.spaceID, vehicleCD=g_currentVehicle.item.intCD,
-                           path=hangar.spacePath, environment=hangar.environment,
+                           path=hangar.spacePath, environment=getattr(hangar, 'environment', None),
                            mask=hangar.visibilityMask, premium=hangar._HangarSpace__isSpacePremium,
                            account=BigWorld.player(), lobby=lobby, app=lobbyApp,
                            appActive=lobbyApp.isActive, cursorMode=lobbyApp.ctrlModeFlags,
@@ -138,7 +140,9 @@ class LocalSession(object):
             hangar.destroy()
             # Default space is required for the battle terrain renderer. The
             # True flag used by ClientHangarSpace produces missing terrain here.
-            self.spaceID = BigWorld.createSpace()
+            # WoT returns a Space handle; MT returns its numeric ID directly.
+            self._space = BigWorld.createSpace()
+            self.spaceID = getattr(self._space, 'id', self._space)
             cleanup.defer('release local space', BigWorld.releaseSpace, self.spaceID)
             cleanup.defer('clear local space', BigWorld.clearSpace, self.spaceID)
             flags = SpaceVisibilityFlagsFactory.create(self.arena.geometryName)
@@ -215,7 +219,7 @@ class LocalSession(object):
         self.lastReport.update(hangarReady=ready,
             sameAccount=BigWorld.player() is saved['account'],
             sameHangar=hangar.spacePath == saved['path'],
-            sameEnvironment=hangar.environment == saved['environment'],
+            sameEnvironment=getattr(hangar, 'environment', None) == saved['environment'],
             sameVisibility=hangar.visibilityMask == saved['mask'],
             sameVehicle=bool(g_currentVehicle.item and g_currentVehicle.item.intCD == saved['vehicleCD']))
         self.restoring = False
@@ -413,6 +417,7 @@ class LocalSession(object):
         self.battleApp = self.hud = self.flight = self.camera = None
         self.border = None
         self.spaceID = self.mappingID = None
+        self._space = None
         self.visibilityMask = None
         self.paused = False
         self.cursorControl = False
@@ -437,8 +442,16 @@ class LocalMinimap(MinimapMeta):
 
     def attach(self, path, arena):
         from . import bootstrap as ui
-        self.native = GUI.MinimapFlashAS3(self.app.movie, path)
-        self.native.inputKeyMode = 2
+        factory = getattr(GUI, 'MinimapFlashAS3', None)
+        inputMode = 'inputKeyMode'
+        if factory is None:
+            factory = GUI.WGMinimapFlashAS3
+            inputMode = 'wg_inputKeyMode'
+            self.as_disableHintPanelS()
+        else:
+            self.as_disableHintPanelS(True)
+        self.native = factory(self.app.movie, path)
+        setattr(self.native, inputMode, 2)
         self.app.component.addChild(self.native, 'wotstatLocalMap')
         self.native.setArenaBB(*getMinimapBounds(arena.boundingBox))
         self.native.mapSize = Math.Vector2(210.0, 210.0)
@@ -502,7 +515,7 @@ class LocalMenu(IngameMenu):
         self.cancelClick()
 
     def _setMenuButtonsLabels(self):
-        self.as_setMenuButtonsLabelsS('', u'Настройки', u'Вернуться к просмотру', u'Выйти в ангар')
+        self.as_setMenuButtonsLabelsS('', text('settings'), text('resume'), text('exitToHangar'))
 
     def _setMenuButtons(self):
         from gui.Scaleform.genConsts.INGAMEMENU_CONSTANTS import INGAMEMENU_CONSTANTS as buttons

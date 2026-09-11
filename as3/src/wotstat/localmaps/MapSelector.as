@@ -6,6 +6,7 @@ package wotstat.localmaps {
     import scaleform.clik.controls.ScrollingList;
     import net.wg.gui.components.controls.SoundButtonEx;
     import net.wg.gui.components.minimap.MinimapPresentation;
+    import net.wg.gui.events.UILoaderEvent;
     import scaleform.clik.data.DataProvider;
     import scaleform.clik.events.ButtonEvent;
     import scaleform.clik.events.ListEvent;
@@ -35,9 +36,8 @@ package wotstat.localmaps {
         override protected function onPopulate():void {
             // No authored room layout or deferred rearrangement.
             super.onPopulate();
-            window.title = 'Локальный просмотр карт';
             window.useBottomBtns = true;
-            mapLabel = makeLabel('Выбор карты:', 8, 4, 250, 14);
+            mapLabel = makeLabel('', 8, 4, 250, 14);
             mapName = makeLabel('', 286, 0, PREVIEW_SIZE, 20);
             maps = App.utils.classFactory.getComponent('ScrollingList', ScrollingList);
             maps.name = 'maps';
@@ -67,8 +67,11 @@ package wotstat.localmaps {
             minimap.scaleX = minimap.scaleY = PREVIEW_SIZE / NATIVE_PREVIEW_SIZE;
             minimap.scope = 'createRoom';
             addChild(minimap);
-            startButton = makeButton('Начать просмотр', CONTENT_W - 104 - 10 - 180, 180);
-            closeButton = makeButton('Закрыть', CONTENT_W - 104, 104);
+            // The stock presentation removes its own listener after the first
+            // image. Refit every subsequent texture to the same grid and frame.
+            minimap.map.addEventListener(UILoaderEvent.COMPLETE, onPreviewLoaded);
+            startButton = makeButton('', CONTENT_W - 104 - 10 - 180, 180);
+            closeButton = makeButton('', CONTENT_W - 104, 104);
             startButton.enabled = false;
             maps.addEventListener(ListEvent.INDEX_CHANGE, onMapChanged);
             modes.addEventListener(ListEvent.INDEX_CHANGE, onModeChanged);
@@ -76,7 +79,11 @@ package wotstat.localmaps {
             closeButton.addEventListener(ButtonEvent.CLICK, onClose);
             registerFlashComponentS(minimap, 'wotstatLocalMapsPreview');
         }
-        public function as_setData(data:Array):void {
+        public function as_setData(data:Array, labels:Object):void {
+            window.title = labels.title;
+            mapLabel.text = labels.selectMap;
+            startButton.label = labels.start;
+            closeButton.label = labels.close;
             rows = data;
             maps.dataProvider = new DataProvider(rows);
             maps.selectedIndex = rows.length ? 0 : -1;
@@ -119,8 +126,13 @@ package wotstat.localmaps {
             modeSelected(id);
         }
         private function onStart(event:ButtonEvent):void { startViewing(); }
+        private function onPreviewLoaded(event:UILoaderEvent):void {
+            minimap.invalidateSize();
+            minimap.validateNow();
+        }
         private function onClose(event:ButtonEvent):void { onWindowCloseS(); }
         override protected function onBeforeDispose():void {
+            minimap.map.removeEventListener(UILoaderEvent.COMPLETE, onPreviewLoaded);
             maps.removeEventListener(ListEvent.INDEX_CHANGE, onMapChanged);
             modes.removeEventListener(ListEvent.INDEX_CHANGE, onModeChanged);
             startButton.removeEventListener(ButtonEvent.CLICK, onStart);

@@ -8,9 +8,7 @@ package wotstat.localmaps {
     import flash.text.TextFormat;
     import net.wg.app.iml.base.StageResizeEvent;
     import net.wg.infrastructure.base.AbstractView;
-    import net.wg.gui.components.advanced.BackButton;
     import net.wg.gui.battle.views.minimap.Minimap;
-    import net.wg.gui.components.controls.SoundButtonEx;
     import scaleform.clik.events.ButtonEvent;
 
     public class BattleBridge extends AbstractView {
@@ -19,11 +17,10 @@ package wotstat.localmaps {
         public var settingChanged:Function;
         public var inputLost:Function;
         public var loadingFailed:Function;
-        public var nativeLibraryRequested:Function;
         public var minimap:Minimap;
-        public var backButton:SoundButtonEx;
+        public var backButton:ReturnButton;
         public var debugPanel:DebugPanel;
-        private var nativeLobby:NativeLobbyLibrary;
+        private var nativeControls:NativeControls;
         private var header:Shape;
         private var title:TextField;
         private var mode:TextField;
@@ -37,19 +34,16 @@ package wotstat.localmaps {
             super.onPopulate();
             mouseEnabled = false;
             App.stage.addEventListener(StageResizeEvent.STAGE_RESIZE, onStageResize);
-            nativeLobby = new NativeLobbyLibrary(buildControls, loadingFailed);
-            nativeLibraryRequested();
+            nativeControls = new NativeControls(buildControls, loadingFailed);
+            nativeControls.load();
         }
-        public function as_loadNativeLibrary(encoded:String):void { nativeLobby.load(encoded); }
         private function buildControls():void {
             header = new Shape(); addChild(header);
-            backButton = App.utils.classFactory.getComponent('BackButtonUI', SoundButtonEx);
+            backButton = new ReturnButton();
             backButton.name = 'backButton';
-            backButton.label = 'НАЗАД'; Object(backButton).descrLabel = 'В АНГАР';
-            BackButton(backButton).secondaryStates.textMc.textField.textColor = 0xCCCCCC;
-            BackButton(backButton).secondaryStates.textMc.alpha = 0.8;
             backButton.x = 24; backButton.y = 28;
             addChild(backButton);
+            backButton.validateNow();
             backButton.addEventListener(ButtonEvent.CLICK, onBack);
             title = makeLabel(20, 0xE9E2BF); title.y = 18;
             mode = makeLabel(13, 0xC9C9B6); mode.y = 46;
@@ -63,7 +57,6 @@ package wotstat.localmaps {
             minimap.name = 'minimap';
             addChild(minimap);
             registerFlashComponentS(minimap, 'wotstatLocalMapsMinimap');
-            minimap.as_disableHintPanel(true);
             minimap.validateNow();
             minimap.setAllowedSizeIndex(sizeIndex);
             layoutMinimap();
@@ -73,7 +66,9 @@ package wotstat.localmaps {
             names[0]='root'; // GFx exports the document root under this name.
             minimapReady('_level0.'+names.join('.'));
         }
-        public function as_setViewerData(mapName:String, modeName:String, sections:Array):void {
+        public function as_setViewerData(mapName:String, modeName:String, sections:Array, labels:Object):void {
+            backButton.setLabels(labels.back, labels.toHangar);
+            debugPanel.setLabels(labels.panelTitle, labels.mouseHint);
             title.text = mapName; mode.text = modeName;
             as_setSections(sections); layoutMinimap();
             as_setInteractive(false);
@@ -90,7 +85,7 @@ package wotstat.localmaps {
             debugPanel.setValue(section, id, value);
         }
         public function as_setInteractive(value:Boolean):void {
-            backButton.mouseEnabled = backButton.mouseChildren = value;
+            backButton.setInteractive(value);
             debugPanel.setInteractive(value);
             if (!value) setFocus(this);
         }
@@ -169,8 +164,8 @@ package wotstat.localmaps {
             }
             minimapReady=null;
             returnToHangar = settingChanged = inputLost = null;
-            loadingFailed = nativeLibraryRequested = null;
-            if (nativeLobby) { nativeLobby.dispose(); nativeLobby = null; }
+            loadingFailed = null;
+            if (nativeControls) { nativeControls.dispose(); nativeControls = null; }
             header = null; title = mode = null;
             super.onDispose();
         }

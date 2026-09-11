@@ -1,4 +1,4 @@
-param([string]$Version = '1.4.3', [string]$Python = 'C:\Python27\python.exe')
+param([string]$Version = '1.6.0', [string]$Python = 'C:\Python27\python.exe')
 $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
 $buildRoot = [IO.Path]::GetFullPath((Join-Path $projectRoot '.build'))

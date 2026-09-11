@@ -8,10 +8,14 @@ BigWorld modules, the player and all other game object constructors are intact.
 from types import FunctionType
 import CGF
 import BigWorld
-import SoundZoneTrigger
 
 
 def install(session):
+    # This UDO exists only in MT. WoT has no corresponding constructor to fix.
+    import ResMgr
+    if not ResMgr.isFile('scripts/client/SoundZoneTrigger.pyc'):
+        return
+    import SoundZoneTrigger
     original = SoundZoneTrigger.SoundZoneTrigger.__init__
 
     class ZoneCGF(object):

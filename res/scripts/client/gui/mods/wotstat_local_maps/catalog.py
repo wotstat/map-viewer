@@ -24,7 +24,6 @@ def loadCatalog():
     import ArenaType
     import ResMgr
     from helpers import i18n
-    from gui.Scaleform.daapi.view.lobby.trainings.formatters import getMapIconPath
     records = []
     for arenaID, arena in ArenaType.g_cache.iteritems():
         if ResMgr.openSection('spaces/' + arena.geometryName + '/space.settings') is None:
@@ -34,5 +33,6 @@ def loadCatalog():
         records.append(dict(key=arenaID, geometry=arena.geometryName,
                             name=displayName(arena.name, arena.geometryName),
                             mode=arena.gameplayName, modeLabel=label, size=arena.maxPlayersInTeam,
-                            time=arena.roundLength / 60, description='', icon=getMapIconPath(arena)))
+                            time=arena.roundLength / 60, description='',
+                            icon='../maps/icons/map/%s.png' % arena.geometryName))
     return groupArenas(records)

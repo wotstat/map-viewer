@@ -37,7 +37,10 @@ class LocalBattleApp(BattleEntry):
         initialize = FunctionType(original.func_code, localGlobals,
                                   original.func_name, original.func_defaults,
                                   original.func_closure)
-        initialize(self, R.entries.battle(), 'wotstat/localmaps',
+        entry = R.entries.dyn('battle')
+        if not entry.isValid():
+            entry = R.entries.default.battle
+        initialize(self, entry(), 'wotstat/localmaps',
                    GUI_CTRL_MODE_FLAG.CURSOR_ATTACHED,
                    DAAPIRootBridge(initCallback='registerBattleTest'))
 

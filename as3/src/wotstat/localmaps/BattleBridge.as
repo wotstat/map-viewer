@@ -8,6 +8,7 @@ package wotstat.localmaps {
     import flash.text.TextFormat;
     import net.wg.app.iml.base.StageResizeEvent;
     import net.wg.infrastructure.base.AbstractView;
+    import net.wg.gui.components.advanced.BackButton;
     import net.wg.gui.battle.views.minimap.Minimap;
     import net.wg.gui.components.controls.SoundButtonEx;
     import scaleform.clik.events.ButtonEvent;
@@ -29,6 +30,8 @@ package wotstat.localmaps {
         private var sizeIndex:int = 2;
         private var screenW:Number;
         private var screenH:Number;
+        private var interfaceVisible:Boolean = true;
+        private var hasSections:Boolean = false;
 
         override protected function onPopulate():void {
             super.onPopulate();
@@ -43,14 +46,18 @@ package wotstat.localmaps {
             backButton = App.utils.classFactory.getComponent('BackButtonUI', SoundButtonEx);
             backButton.name = 'backButton';
             backButton.label = 'НАЗАД'; Object(backButton).descrLabel = 'В АНГАР';
+            BackButton(backButton).secondaryStates.textMc.textField.textColor = 0xCCCCCC;
+            BackButton(backButton).secondaryStates.textMc.alpha = 0.8;
             backButton.x = 24; backButton.y = 28;
             addChild(backButton);
             backButton.addEventListener(ButtonEvent.CLICK, onBack);
             title = makeLabel(20, 0xE9E2BF); title.y = 18;
             mode = makeLabel(13, 0xC9C9B6); mode.y = 46;
             debugPanel = new DebugPanel(); addChild(debugPanel);
+            debugPanel.visible = false;
             debugPanel.changed = onSettingChanged;
             debugPanel.resized = positionPanel;
+            debugPanel.beforeToggle = focusPanel;
             App.stage.addEventListener(Event.DEACTIVATE, onInputLost);
             minimap = App.utils.classFactory.getComponent('minimapUI', Minimap);
             minimap.name = 'minimap';
@@ -68,7 +75,7 @@ package wotstat.localmaps {
         }
         public function as_setViewerData(mapName:String, modeName:String, sections:Array):void {
             title.text = mapName; mode.text = modeName;
-            debugPanel.setSections(sections); layoutMinimap();
+            as_setSections(sections); layoutMinimap();
             as_setInteractive(false);
         }
         public function as_setSections(sections:Array):void {
@@ -76,6 +83,8 @@ package wotstat.localmaps {
             // Move it before disposing rows, including when another window is open.
             setFocus(this);
             debugPanel.setSections(sections);
+            hasSections = sections.length > 0;
+            debugPanel.visible = interfaceVisible && hasSections;
         }
         public function as_setControlValue(section:String, id:String, value:Object):void {
             debugPanel.setValue(section, id, value);
@@ -85,6 +94,17 @@ package wotstat.localmaps {
             debugPanel.setInteractive(value);
             if (!value) setFocus(this);
         }
+        public function as_setVisibility(showInterface:Boolean, showMinimap:Boolean):void {
+            interfaceVisible = showInterface;
+            if (!showInterface) {
+                setFocus(this);
+                debugPanel.releaseInput();
+            }
+            header.visible = title.visible = mode.visible = showInterface;
+            backButton.visible = showInterface;
+            debugPanel.visible = showInterface && hasSections;
+            minimap.visible = showInterface && showMinimap;
+        }
         private function makeLabel(size:int, color:uint):TextField {
             var field:TextField = App.textMgr.createTextField();
             var format:TextFormat = new TextFormat('$FieldFont', size, color);
@@ -93,6 +113,7 @@ package wotstat.localmaps {
             field.height = 30; addChild(field); return field;
         }
         private function onBack(event:ButtonEvent):void { returnToHangar(); }
+        private function focusPanel():void { setFocus(this); }
         private function onSettingChanged(section:String, id:String, value:Object):void {
             settingChanged(section, id, value);
         }

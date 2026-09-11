@@ -25,6 +25,8 @@ package wotstat.localmaps {
         private static const CONTENT_H:int = 442;
         private static const PREVIEW_SIZE:int = 340;
         private static const NATIVE_PREVIEW_SIZE:int = 300;
+        // The scale9 skin keeps a 3 px shadow on each side of its visible frame.
+        private static const DROPDOWN_INSET:int = 3;
 
         public function MapSelector() {
             super();
@@ -47,19 +49,26 @@ package wotstat.localmaps {
             addChild(maps);
             modes = App.utils.classFactory.getComponent('DropdownMenuUI', DropdownMenu);
             modes.name = 'modes';
-            modes.x = 286; modes.y = 30; modes.width = PREVIEW_SIZE;
+            modes.x = 286 - DROPDOWN_INSET; modes.y = 30;
             modes.dropdown = 'DropdownMenu_ScrollingList';
             modes.itemRenderer = 'DropDownListItemRendererSound';
             modes.menuRowsFixed = false; modes.rowCount = -1;
             addChild(modes);
+            // hitMc scales differently from the skin and cannot measure its frame.
+            modes.setSize(PREVIEW_SIZE + DROPDOWN_INSET * 2, modes.height);
+            modes.menuWidth = PREVIEW_SIZE;
+            modes.menuOffset.left = DROPDOWN_INSET;
+            modes.validateNow();
             minimap = App.utils.classFactory.getComponent('LobbyMinimap', MinimapPresentation);
             minimap.name = 'minimap';
             minimap.x = 286; minimap.y = 64;
+            // The native loader restores its authored 300 px image on load.
+            // Scale the whole presentation so texture, grid and points agree.
             minimap.scaleX = minimap.scaleY = PREVIEW_SIZE / NATIVE_PREVIEW_SIZE;
             minimap.scope = 'createRoom';
             addChild(minimap);
-            startButton = makeButton('Начать просмотр', 332, 180);
-            closeButton = makeButton('Закрыть', 522, 104);
+            startButton = makeButton('Начать просмотр', CONTENT_W - 104 - 10 - 180, 180);
+            closeButton = makeButton('Закрыть', CONTENT_W - 104, 104);
             startButton.enabled = false;
             maps.addEventListener(ListEvent.INDEX_CHANGE, onMapChanged);
             modes.addEventListener(ListEvent.INDEX_CHANGE, onModeChanged);

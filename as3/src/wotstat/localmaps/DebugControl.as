@@ -6,6 +6,7 @@ package wotstat.localmaps {
     import flash.geom.Point;
     import flash.text.TextField;
     import flash.text.TextFormat;
+    import flash.text.TextFieldAutoSize;
     import net.wg.gui.components.controls.CheckBox;
     import net.wg.gui.components.controls.DropdownMenu;
     import net.wg.gui.components.controls.Slider;
@@ -23,14 +24,26 @@ package wotstat.localmaps {
         private var model:Object;
         private var changed:Function;
         private var updating:Boolean = false;
+        private var contentWidth:int;
+        private var contentLabel:TextField;
         private var valueLabel:TextField;
+        private var tooltip:DebugTooltip;
 
         public function DebugControl(section:String, data:Object, w:int, callback:Function) {
             super();
             sectionID = section; controlID = data.id; model = data; changed = callback;
+            contentWidth = w;
             name = 'control_' + controlID;
-            if (data.type == 'slider') {
-                label(data.label, 0, w - 96);
+            if (data.type == 'text') {
+                var field:TextField = contentLabel = label(data.text, 0, w);
+                var textFormat:TextFormat = field.defaultTextFormat;
+                textFormat.color = data.color; field.defaultTextFormat = textFormat;
+                field.multiline = field.wordWrap = true;
+                field.autoSize = TextFieldAutoSize.LEFT; field.text = data.text;
+                rowHeight = Math.ceil(field.height) + 8;
+                graphics.beginFill(0, 0); graphics.drawRect(0, 0, w, rowHeight); graphics.endFill();
+            } else if (data.type == 'slider') {
+                contentLabel = label(data.label, 0, w - 96);
                 valueLabel = label('', w - 96, 96);
                 var format:TextFormat = valueLabel.defaultTextFormat;
                 format.align = 'right'; valueLabel.defaultTextFormat = format;
@@ -48,7 +61,7 @@ package wotstat.localmaps {
                 addChild(checkbox); checkbox.validateNow();
                 rowHeight = 32;
             } else {
-                label(data.label, 0, w);
+                contentLabel = label(data.label, 0, w);
                 dropdown = App.utils.classFactory.getComponent('DropdownMenuUI', DropdownMenu);
                 dropdown.name = 'dropdown'; dropdown.y = 26; dropdown.width = w;
                 dropdown.dropdown = 'DropdownMenu_ScrollingList';
@@ -60,7 +73,8 @@ package wotstat.localmaps {
                 addChild(dropdown); dropdown.validateNow();
                 rowHeight = 60;
             }
-            setValue(data.value);
+            if (data.type != 'text') setValue(data.value);
+            tooltip = new DebugTooltip(this, data.tooltip);
             if (slider) {
                 slider.addEventListener(SliderEvent.VALUE_CHANGE, onChanged);
                 slider.addEventListener(Event.CHANGE, onChanged);
@@ -79,6 +93,27 @@ package wotstat.localmaps {
             field.embedFonts = true; field.selectable = false; field.mouseEnabled = false;
             field.x = left; field.width = w; field.height = 24; field.text = text;
             addChild(field); return field;
+        }
+        public function setContentWidth(w:int):void {
+            if (contentWidth == w) return;
+            contentWidth = w;
+            updating = true;
+            if (slider) {
+                contentLabel.width = w - 96;
+                valueLabel.x = w - 96;
+                slider.width = w; slider.validateNow();
+            } else if (checkbox) {
+                checkbox.width = w; checkbox.validateNow();
+            } else if (dropdown) {
+                contentLabel.width = w;
+                dropdown.width = w; dropdown.validateNow();
+            } else {
+                contentLabel.width = w;
+                rowHeight = Math.ceil(contentLabel.height) + 8;
+                graphics.clear(); graphics.beginFill(0, 0);
+                graphics.drawRect(0, 0, w, rowHeight); graphics.endFill();
+            }
+            updating = false;
         }
         public function setValue(value:Object):void {
             updating = true;
@@ -127,10 +162,12 @@ package wotstat.localmaps {
             dropdown.rowCount = Math.max(1, Math.min(8, Math.floor((room - 8) / 24)));
         }
         public function releaseInput():void {
+            if (tooltip) tooltip.hide();
             if (dropdown) dropdown.close();
         }
         public function dispose():void {
             releaseInput();
+            tooltip.dispose(); tooltip = null;
             removeEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
             if (slider) {
                 slider.removeEventListener(SliderEvent.VALUE_CHANGE, onChanged);
@@ -147,7 +184,7 @@ package wotstat.localmaps {
                 removeEventListener(MouseEvent.MOUSE_DOWN, prepareDropdown, true);
                 dropdown.dispose(); dropdown = null;
             }
-            changed = null; model = null; valueLabel = null;
+            changed = null; model = null; contentLabel = valueLabel = null;
         }
     }
 }

@@ -12,6 +12,29 @@ def slider(value=60):
 
 
 class DebugPanelTest(unittest.TestCase):
+    def test_text_rows_are_read_only_and_tooltips_survive_snapshot(self):
+        registry = SettingsRegistry()
+        registry.registerSection('legend', 'Legend', [
+            dict(id='red', type='text', text=u'Red: 0%\nNo camouflage', color=0xFF5555),
+            dict(id='enabled', type='checkbox', label='Enabled', value=False, tooltip='Help')
+        ], lambda *args: self.fail('Text must never invoke callback'), tooltip='Section help')
+        section = registry.snapshot()[0]
+        self.assertEqual(section['tooltip'], 'Section help')
+        self.assertEqual(section['controls'][0]['text'], u'Red: 0%\nNo camouflage')
+        self.assertEqual(section['controls'][1]['tooltip'], 'Help')
+        self.assertFalse(registry.changeValue('legend', 'red', True))
+        with self.assertRaises(ValueError):
+            registry.setValue('legend', 'red', 'Other')
+
+    def test_invalid_text_color_does_not_replace_section(self):
+        self.registry.registerSection('camera', 'Original', [slider()], lambda *v: None)
+        for color in (-1, 0x1000000, True, 'red'):
+            with self.assertRaises(ValueError):
+                self.registry.registerSection('camera', 'Bad', [
+                    dict(id='text', type='text', text='Legend', color=color)
+                ], lambda *v: None)
+        self.assertEqual(self.registry.snapshot()[0]['title'], 'Original')
+
     def setUp(self):
         self.registry = SettingsRegistry()
         self.changes = []

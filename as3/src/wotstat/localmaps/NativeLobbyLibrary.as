@@ -47,15 +47,19 @@ package wotstat.localmaps {
         }
         private function onLibrary(event:Event):void {
             if (disposed) return;
-            if (ApplicationDomain.currentDomain.hasDefinition('BackButtonUI')) { notifyReady(); return; }
+            if (controlsReady()) { notifyReady(); return; }
             App.instance.loaderMgr.addEventListener(LibraryLoaderEvent.LOADED_COMPLETED, onControls);
             App.instance.loaderMgr.addEventListener(LibraryLoaderEvent.LOADING_FAILED, onControlsFailed);
-            App.instance.loaderMgr.loadLibraries(new <String>['guiControlsLobby.swf']);
+            App.instance.loaderMgr.loadLibraries(new <String>['guiControlsLobby.swf', 'guiControlsLobbyBattle.swf']);
         }
         private function onControls(event:LibraryLoaderEvent):void {
-            if (!disposed && ApplicationDomain.currentDomain.hasDefinition('BackButtonUI')) {
+            if (!disposed && controlsReady()) {
                 notifyReady();
             }
+        }
+        private function controlsReady():Boolean {
+            return ApplicationDomain.currentDomain.hasDefinition('BackButtonUI') &&
+                ApplicationDomain.currentDomain.hasDefinition('FieldSet');
         }
         private function notifyReady():void {
             removeControlsListeners();
@@ -64,7 +68,8 @@ package wotstat.localmaps {
             try { callback(); } catch (error:Error) { fail(error.message); }
         }
         private function onControlsFailed(event:LibraryLoaderEvent):void {
-            if (event.requestedUrl == 'guiControlsLobby.swf') fail('Native lobby controls could not be loaded');
+            if (event.requestedUrl == 'guiControlsLobby.swf' || event.requestedUrl == 'guiControlsLobbyBattle.swf')
+                fail('Native lobby controls could not be loaded');
         }
         private function onError(event:Event):void { fail(event.toString()); }
         private function fail(message:String):void {

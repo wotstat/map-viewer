@@ -1,17 +1,19 @@
 # Контекст проекта
 
 Локальный просмотр карт из ангара для «Мир танков» RU 1.45.0.0 #2269.
-Текущая проверенная версия — 1.3.0; Python 2.7 и Scaleform/AS3.
+Текущая проверенная версия — 1.4.1; Python 2.7 и Scaleform/AS3.
 Мод загружает геометрию без серверного боя и восстанавливает исходный ангар при выходе.
 
 ## С чего начать
 
 - Прочитай `README.md`, `docs/architecture.md` и `docs/debug-panel-api.md`.
-- Результаты последней проверки: `docs/test-report-1.3.0.md` — 19 unit-тестов,
+- Результаты последней проверки: `docs/test-report-1.4.1.md` — 22 unit-теста,
   сборка трёх SWF и проверка установленного мода через REPL.
 - Python: `res/scripts/client/gui/mods/`; точка входа `mod_wotstat_local_maps.py`.
   В пакете `wotstat_local_maps`: `viewer.py` — сессия и камера,
   `bootstrap.py` — UI, `debug_panel.py` — публичный API секций настроек.
+- `events.py` — публичные события `ready`/`stopping`/`stopped` и контекст карты.
+  Vegetation 1.2.0 подключает собственную секцию и удаляет модели в `stopping`.
 - AS3: `as3/src/wotstat/localmaps/`; `BattleBridge.as` — HUD,
   `DebugPanel.as` и `DebugControl.as` — панель и штатные контролы.
 
@@ -24,10 +26,10 @@
 ```powershell
 C:\Python27\python.exe -B tools\extract_libraries.py E:\Games\Tanki # если нет as3/libs
 C:\Python27\python.exe -B -m unittest discover -s tests -v
-.\build.ps1 -Version 1.3.0
+.\build.ps1 -Version 1.4.1
 ```
 
-Результат: `dist/wotstat.local-maps_1.3.0.mtmod`; установка при закрытой игре
+Результат: `dist/wotstat.local-maps_1.4.1.mtmod`; установка при закрытой игре
 в `E:\Games\Tanki\mods\1.45.0.0\`, только одна версия этого мода.
 Запускай Python с `-B`: импорт не должен оставлять `.pyc` рядом с исходниками.
 Байткод для пакета сборщик создаёт в `.build/` явно.

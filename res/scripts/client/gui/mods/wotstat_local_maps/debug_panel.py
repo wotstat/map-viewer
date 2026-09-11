@@ -30,6 +30,8 @@ def _number(value):
 
 def _validValue(control, value):
     kind = control['type']
+    if kind == 'text':
+        return False
     if kind == 'slider':
         return _number(value) and control['min'] <= value <= control['max']
     if kind == 'checkbox':
@@ -40,8 +42,17 @@ def _validValue(control, value):
 def _control(data):
     if not isinstance(data, dict):
         raise ValueError('Each control must be a dictionary')
+    tooltip = data.get('tooltip', '')
+    if not isinstance(tooltip, basestring):
+        raise ValueError('Tooltip must be a string')
+    if data.get('type') == 'text':
+        color = data.get('color', 0xC9C9B6)
+        if not isinstance(color, (int, long)) or isinstance(color, bool) or not 0 <= color <= 0xFFFFFF:
+            raise ValueError('Text color must be an RGB integer')
+        return dict(id=_text(data.get('id'), 'control id'), type='text',
+                    text=_text(data.get('text'), 'text'), color=color, tooltip=tooltip)
     result = dict(id=_text(data.get('id'), 'control id'),
-                  label=_text(data.get('label'), 'control label'), type=data.get('type'))
+                  label=_text(data.get('label'), 'control label'), type=data.get('type'), tooltip=tooltip)
     if result['type'] == 'slider':
         low, high, step = data.get('min'), data.get('max'), data.get('step', 1)
         if not all(_number(v) for v in (low, high, step)) or low >= high or step <= 0:
@@ -77,9 +88,11 @@ class SettingsRegistry(object):
         self._sections = OrderedDict()
         self._listeners = []
 
-    def registerSection(self, sectionID, title, controls, onChange):
+    def registerSection(self, sectionID, title, controls, onChange, tooltip=''):
         _text(sectionID, 'section id')
         _text(title, 'section title')
+        if not isinstance(tooltip, basestring):
+            raise ValueError('Section tooltip must be a string')
         if not callable(onChange):
             raise ValueError('onChange must be callable')
         if not isinstance(controls, (list, tuple)):
@@ -90,7 +103,7 @@ class SettingsRegistry(object):
             if control['id'] in prepared:
                 raise ValueError('Control ids must be unique within a section')
             prepared[control['id']] = control
-        self._sections[sectionID] = dict(title=title, controls=prepared, callback=onChange)
+        self._sections[sectionID] = dict(title=title, controls=prepared, callback=onChange, tooltip=tooltip)
         self._emit('sections')
 
     def unregisterSection(self, sectionID):
@@ -99,7 +112,7 @@ class SettingsRegistry(object):
             self._emit('sections')
 
     def snapshot(self):
-        return [dict(id=key, title=section['title'], controls=copy.deepcopy(section['controls'].values()))
+        return [dict(id=key, title=section['title'], tooltip=section['tooltip'], controls=copy.deepcopy(section['controls'].values()))
                 for key, section in self._sections.iteritems()]
 
     def getValue(self, sectionID, controlID):
@@ -118,6 +131,8 @@ class SettingsRegistry(object):
         if section is None or controlID not in section['controls']:
             return False
         control = section['controls'][controlID]
+        if control['type'] == 'text':
+            return False
         if not _validValue(control, value):
             self._emit('value', sectionID, controlID, control['value'])
             return False

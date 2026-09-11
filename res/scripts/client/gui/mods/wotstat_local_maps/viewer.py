@@ -15,7 +15,6 @@ from gui.Scaleform.daapi.view.battle.shared.ingame_menu import IngameMenu
 from gui.Scaleform.framework.managers.loaders import SFViewLoadParams
 from gui.Scaleform.daapi.view.battle.shared.minimap.settings import TRANSFORM_FLAG
 from .minimap_bounds import getMinimapBounds
-from .debug_panel import g_registry
 
 log = logging.getLogger('WOTSTAT_LOCAL_MAPS')
 
@@ -26,6 +25,7 @@ class LocalSession(object):
         self.paused = False
         self.camera = None
         self.flight = None
+        self._cameraSpeed = 60.0
         self.arena = None
         self.spaceID = None
         self.mappingID = None
@@ -44,7 +44,11 @@ class LocalSession(object):
         self._loadingWatchdog = None
         self._restoreAllowed = True
         self.cursorControl = False
+        self.minimapVisible = True
+        self.interfaceVisible = True
         self._ctrlKeys = set()
+        self._eventContext = None
+        self.visibilityMask = None
 
     def start(self, arenaID):
         from . import bootstrap as ui
@@ -55,6 +59,7 @@ class LocalSession(object):
         if not hangar.spaceInited or BigWorld.player().__class__.__name__ != 'PlayerAccount' or not g_currentVehicle.item:
             return
         self.arena = ArenaType.g_cache[int(arenaID)]
+        self.arenaID = int(arenaID)
         lobby = ui.findView('lobby')
         lobbyApp = ui.app()
         self._saved = dict(camera=BigWorld.camera(), fov=BigWorld.projection().fov,
@@ -73,6 +78,7 @@ class LocalSession(object):
         self.stopping = False
         self._restoreAllowed = True
         self.cursorControl = self.paused = False
+        self.minimapVisible = self.interfaceVisible = True
         self._ctrlKeys.clear()
         self._showLoading(self._beginStart)
 
@@ -137,6 +143,7 @@ class LocalSession(object):
             cleanup.defer('clear local space', BigWorld.clearSpace, self.spaceID)
             flags = SpaceVisibilityFlagsFactory.create(self.arena.geometryName)
             mask = flags.getMaskForGameplayID(self.arena.gameplayID)
+            self.visibilityMask = mask
             self.mappingID = BigWorld.addSpaceGeometryMapping(self.spaceID, None, 'spaces/' + self.arena.geometryName, mask)
             cleanup.defer('remove local geometry', BigWorld.delSpaceGeometryMapping, self.spaceID, self.mappingID)
             self.camera = BigWorld.FreeCamera()
@@ -144,7 +151,7 @@ class LocalSession(object):
             bl, tr = self.arena.boundingBox
             center = (bl + tr) * 0.5
             self.flight = FlightController(self.camera, (center.x, 140.0, center.y - 250.0),
-                                           g_registry.getValue('wotstat.free-camera', 'speed'))
+                                           self._cameraSpeed)
             cleanup.defer('restore hangar camera', self._restoreCamera)
             BigWorld.camera(self.camera)
             cleanup.defer('restore shadow camera mode', BigWorld.enableFreeCameraModeForShadowManager, False)
@@ -215,6 +222,17 @@ class LocalSession(object):
         self._hideLoading()
         self._saved = None
         log.info('Returned: %s', self.lastReport)
+        if self._eventContext is not None:
+            from . import events
+            context, self._eventContext = self._eventContext, None
+            events._emit('stopped', context)
+
+    def notifyReady(self):
+        if self._eventContext is None and self.active and not self.stopping:
+            from . import events
+            self._eventContext = events.ViewerContext(self.spaceID, self.arenaID,
+                self.arena.geometryName, self.arena.gameplayID, self.visibilityMask)
+            events._emit('ready', self._eventContext)
 
     def _restoreLobby(self):
         if not self._restoreAllowed:
@@ -261,7 +279,7 @@ class LocalSession(object):
                 self.battleApp.loadView(SFViewLoadParams(ui.HUD))
             if self.hud is None and now - self._started > 90:
                 raise RuntimeError('Map or native HUD loading timed out')
-            if self.hud and not self.paused and not self.cursorControl:
+            if self.hud and not self.paused:
                 self.flight.update(now - self._lastTick)
             self._lastTick = now
             self._callback = BigWorld.callback(0.0, self._tick)
@@ -279,18 +297,23 @@ class LocalSession(object):
         self.paused = False
         self._syncInputMode()
 
-    def _syncInputMode(self):
+    def _syncInputMode(self, preserveInertia=False):
         from gui import GUI_CTRL_MODE_FLAG
+        wasVisible = GUI.mcursor().visible
         self.cursorControl = bool(self._ctrlKeys) and not self.paused and not self.stopping
         visible = self.paused or self.cursorControl
         if self.flight:
-            self.flight.clear()
+            self.flight.clear(stopMotion=not preserveInertia)
         if self.border:
             self.border.extended(False)
         self._lastTick = BigWorld.time()
         if self.hud:
             self.hud.flashObject.as_setInteractive(self.cursorControl)
         if self.battleApp:
+            if (not visible or not wasVisible) and self.battleApp.cursorMgr is not None:
+                # The stock manager resets both the device and Flash cursor,
+                # including its saved position for the next attach/detach.
+                self.battleApp.cursorMgr.resetMousePosition()
             self.battleApp.syncCursor(GUI_CTRL_MODE_FLAG.GUI_ENABLED if visible else GUI_CTRL_MODE_FLAG.CURSOR_ATTACHED)
         GUI.mcursor().visible = visible
         GUI.mcursor().clipped = not visible
@@ -299,31 +322,30 @@ class LocalSession(object):
         self._ctrlKeys.clear()
         self._syncInputMode()
 
-    def setCameraSpeed(self, controlID, value):
-        if self.flight:
-            self.flight.speed = float(value)
-
     def handleMouse(self, event):
         if self.stopping or self.hud is None:
             return True
         if self.paused or self.cursorControl:
             GUI.handleMouseEvent(event)
         else:
-            oldSpeed = self.flight.speed
             self.flight.mouse(event)
-            if self.flight.speed != oldSpeed:
-                g_registry.setValue('wotstat.free-camera', 'speed', self.flight.speed)
+            self._cameraSpeed = self.flight.speed
+            # Same recentering as AvatarInputHandler.VideoCamera: retain mouse
+            # deltas for rotation but never accumulate a hidden cursor position.
+            GUI.mcursor().position = (0.0, 0.0)
         return True
 
     def handleKey(self, event, original):
         from . import bootstrap as ui
         if event.key in (Keys.KEY_LCONTROL, Keys.KEY_RCONTROL):
+            if event.isRepeatedEvent():
+                return True
             if event.isKeyDown():
                 self._ctrlKeys.add(event.key)
             else:
                 self._ctrlKeys.discard(event.key)
             if self.hud and not self.stopping:
-                self._syncInputMode()
+                self._syncInputMode(preserveInertia=not self.paused)
                 if self.paused:
                     GUI.handleKeyEvent(event)
             return True
@@ -340,6 +362,14 @@ class LocalSession(object):
             self.pause()
             self.battleApp.loadView(SFViewLoadParams(ui.MENU))
             return True
+        if event.key in (Keys.KEY_M, Keys.KEY_V):
+            if event.isKeyDown() and not event.isRepeatedEvent():
+                if event.key == Keys.KEY_M:
+                    self.minimapVisible = not self.minimapVisible
+                else:
+                    self.interfaceVisible = not self.interfaceVisible
+                self.hud.flashObject.as_setVisibility(self.interfaceVisible, self.minimapVisible)
+            return True
         if self.cursorControl:
             GUI.handleKeyEvent(event)
             return True
@@ -348,6 +378,7 @@ class LocalSession(object):
                 self.hud.flashObject.as_resizeMinimap(1 if event.key == Keys.KEY_EQUALS else -1)
             return True
         self.flight.key(event)
+        self._cameraSpeed = self.flight.speed
         if event.key in (Keys.KEY_LALT, Keys.KEY_RALT) and self.border:
             self.border.extended(bool(self.flight.keys.intersection((Keys.KEY_LALT, Keys.KEY_RALT))))
         return True
@@ -366,6 +397,9 @@ class LocalSession(object):
         if not self.active:
             return
         self.active = False
+        if self._eventContext is not None:
+            from . import events
+            events._emit('stopping', self._eventContext)
         if self._callback is not None:
             BigWorld.cancelCallback(self._callback)
             self._callback = None
@@ -379,6 +413,7 @@ class LocalSession(object):
         self.battleApp = self.hud = self.flight = self.camera = None
         self.border = None
         self.spaceID = self.mappingID = None
+        self.visibilityMask = None
         self.paused = False
         self.cursorControl = False
         self._ctrlKeys.clear()
@@ -409,22 +444,30 @@ class LocalMinimap(MinimapMeta):
         self.native.mapSize = Math.Vector2(210.0, 210.0)
         import ResMgr
         self.as_setBackgroundS('img://' + arena.minimap if arena.minimap and ResMgr.isFile(arena.minimap) else '')
-        for team, bases in enumerate(arena.teamBasePositions or (), 1):
-            for number, position in bases.iteritems():
-                self.addPoint('AllyTeamBaseEntry' if team == 1 else 'EnemyTeamBaseEntry', position, number)
-        for number, position in enumerate(arena.controlPoints or ()):
-            self.addPoint('ControlPointEntry', position, number)
+        from .minimap_points import iterTeamPoints
+        from gui.Scaleform.daapi.view.battle.shared.points_of_interest.constants import POI_TYPE_UI_MAPPING
+        from gui.Scaleform.genConsts.POI_CONSTS import POI_CONSTS
+        for symbol, position, number in iterTeamPoints(
+                arena.teamBasePositions, arena.teamSpawnPoints, arena.controlPoints):
+            entry = self.addPoint(symbol, position)
+            self.native.entryInvoke(entry, ('setPointNumber', number))
+            if symbol not in ('AllyTeamSpawnEntry', 'EnemyTeamSpawnEntry'):
+                self.native.entryInvoke(entry, ('setState', 'default'))
+        for point in arena.pointsOfInterest or ():
+            entry = self.addPoint('PoiMinimapEntry', point['position'])
+            self.native.entryInvoke(entry, ('setType', POI_TYPE_UI_MAPPING[point['type']]))
+            self.native.entryInvoke(entry, ('setStatus', POI_CONSTS.POI_STATUS_ACTIVE))
+            self.native.entryInvoke(entry, ('setIsAlly', False))
         entry = self.native.addEntry('VideoCameraEntry', 'personal', ui.session.camera.invViewMatrix, True, TRANSFORM_FLAG.DEFAULT)
         self.entries.append(entry)
         log.info('Native minimap attached path=%s entries=%s', path, len(self.entries))
 
-    def addPoint(self, symbol, position, number):
+    def addPoint(self, symbol, position):
         matrix = Math.Matrix()
         matrix.setTranslate((position[0], 0.0, position[1]))
         entry = self.native.addEntry(symbol, 'points', matrix, True, TRANSFORM_FLAG.DEFAULT)
         self.entries.append(entry)
-        self.native.entryInvoke(entry, ('setPointNumber', number))
-        self.native.entryInvoke(entry, ('setState', 'default'))
+        return entry
 
     def _dispose(self):
         if self.native is not None:

@@ -112,10 +112,12 @@ class BattleBridge(View):
                 arena = session.arena
                 mode = displayName(i18n.makeString('#arenas:type/%s/name' % arena.gameplayName), arena.gameplayName)
                 self.flashObject.as_setViewerData(displayName(arena.name, arena.geometryName), mode, g_registry.snapshot())
+                self.flashObject.as_setVisibility(session.interfaceVisible, session.minimapVisible)
                 g_registry.subscribe(self._settingsChanged)
                 self._settingsSubscribed = True
                 session._syncInputMode()
                 session._hideLoading()
+                session.notifyReady()
                 log.info('Local viewer ready; original minimap and camera attached')
             except Exception:
                 log.exception('Native minimap initialization failed')
@@ -195,11 +197,6 @@ def install():
     from .viewer import LocalSession, LocalMinimap, LocalMenu
     from .preview import LocalPreview
     session = LocalSession()
-    from .debug_panel import g_registry
-    g_registry.registerSection('wotstat.free-camera', u'Свободная камера', [
-        dict(id='speed', type='slider', label=u'Скорость', value=60.0,
-             min=5.0, max=500.0, step=1.0, suffix=u' м/с')
-    ], session.setCameraSpeed)
     from .space_hooks import install as installSpaceHooks
     installSpaceHooks(session)
     for settings in (

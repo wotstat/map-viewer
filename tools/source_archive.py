@@ -1,4 +1,4 @@
-"""Package only project sources, documentation and verified screenshots."""
+"""Package project sources and documentation."""
 import os
 import sys
 import zipfile

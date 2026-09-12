@@ -1,6 +1,6 @@
 # Настройки других модов в просмотрщике карт
 
-Модуль `gui.mods.wotstat_local_maps.debug_panel` предоставляет API секций настроек.
+Модуль `gui.mods.wotstat_map_viewer.debug_panel` предоставляет API секций настроек.
 Секция может регистрироваться при загрузке другого мода либо во время просмотра.
 Панель обновится автоматически. Курсор включается удержанием Ctrl.
 Новые группы по умолчанию свёрнуты. Группа раскрывается нажатием
@@ -19,7 +19,7 @@
 
 ```python
 # coding: utf-8
-from gui.mods.wotstat_local_maps import debug_panel
+from gui.mods.wotstat_map_viewer import debug_panel
 
 SECTION = 'my.mod.render-tools'  # Уникальное пространство имён вашего мода.
 values = dict(enabled=True, intensity=50.0, quality='medium')
@@ -113,11 +113,11 @@ debug_panel.registerSection('my.legend', u'Легенда', [
 
 ## События просмотра
 
-Модуль `gui.mods.wotstat_local_maps.events` позволяет подключить визуализацию
+Модуль `gui.mods.wotstat_map_viewer.events` позволяет подключить визуализацию
 без импорта внутреннего `LocalSession` и без создания боевого Avatar.
 
 ```python
-from gui.mods.wotstat_local_maps import events
+from gui.mods.wotstat_map_viewer import events
 
 def onViewer(event, context):
     if event == 'ready':

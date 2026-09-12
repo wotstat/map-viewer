@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'res', 'scripts', 'client', 'gui', 'mods'))
-from wotstat_local_maps import events
+from wotstat_map_viewer import events
 
 
 class LifecycleTest(unittest.TestCase):

@@ -3,7 +3,7 @@ import os
 import sys
 import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'res', 'scripts', 'client', 'gui', 'mods'))
-from wotstat_local_maps.debug_panel import SettingsRegistry
+from wotstat_map_viewer.debug_panel import SettingsRegistry
 
 
 def slider(value=60):

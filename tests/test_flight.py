@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'res', 'scripts', 'client', 'gui', 'mods'))
-from wotstat_local_maps.flight import flightOffset
+from wotstat_map_viewer.flight import flightOffset
 
 
 class FlightTest(unittest.TestCase):
@@ -16,7 +16,7 @@ class FlightTest(unittest.TestCase):
             self.assertEqual(flightOffset(0, pitch, 1, 0, 0, 60), (0, 0, 60))
 
     def test_acceleration_and_braking(self):
-        from wotstat_local_maps.flight import advanceVelocity
+        from wotstat_map_viewer.flight import advanceVelocity
         velocity = advanceVelocity((0, 0, 0), (0, 0, 1), 20, 0.05)
         self.assertEqual(velocity, (0, 0, 5))
         velocity = advanceVelocity(velocity, (0, 0, 1), 20, 0.05)
@@ -28,7 +28,7 @@ class FlightTest(unittest.TestCase):
         self.assertEqual(braking, (0, 0, 0))
 
     def test_velocity_limit_and_frame_independent_braking(self):
-        from wotstat_local_maps.flight import advanceVelocity
+        from wotstat_map_viewer.flight import advanceVelocity
         velocity = advanceVelocity((0, 0, 19), (0, 0, 1), 20, 0.1)
         self.assertEqual(velocity, (0, 0, 20))
         full = advanceVelocity(velocity, (0, 0, 0), 20, 0.1)

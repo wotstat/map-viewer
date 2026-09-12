@@ -1,5 +1,5 @@
-from wotstat_local_maps import VERSION
+from wotstat_map_viewer import VERSION
 
 def init():
-    from wotstat_local_maps.bootstrap import install
+    from wotstat_map_viewer.bootstrap import install
     install()

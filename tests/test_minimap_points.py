@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'res', 'scripts', 'client', 'gui', 'mods'))
-from wotstat_local_maps.minimap_points import iterTeamPoints
+from wotstat_map_viewer.minimap_points import iterTeamPoints
 
 
 class MinimapPointsTest(unittest.TestCase):

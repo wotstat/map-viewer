@@ -4,7 +4,7 @@ import sys
 import types
 import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'res', 'scripts', 'client', 'gui', 'mods'))
-from wotstat_local_maps import localization
+from wotstat_map_viewer import localization
 
 
 class LocalizationTest(unittest.TestCase):

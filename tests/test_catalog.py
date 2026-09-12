@@ -3,7 +3,7 @@ import os
 import sys
 import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'res', 'scripts', 'client', 'gui', 'mods'))
-from wotstat_local_maps.catalog import groupArenas
+from wotstat_map_viewer.catalog import groupArenas
 
 class CatalogTest(unittest.TestCase):
     def test_map_has_only_its_own_modes_and_stable_default(self):

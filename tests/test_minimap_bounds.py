@@ -3,7 +3,7 @@ import os
 import sys
 import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'res', 'scripts', 'client', 'gui', 'mods'))
-from wotstat_local_maps.minimap_bounds import getMinimapBounds
+from wotstat_map_viewer.minimap_bounds import getMinimapBounds
 
 
 class MinimapBoundsTest(unittest.TestCase):

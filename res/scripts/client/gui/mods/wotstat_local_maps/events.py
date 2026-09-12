@@ -7,7 +7,7 @@ import logging
 from collections import namedtuple
 
 ViewerContext = namedtuple('ViewerContext', 'spaceID arenaID geometryName gameplayID visibilityMask')
-log = logging.getLogger('WOTSTAT_LOCAL_MAPS')
+log = logging.getLogger('WOTSTAT_MAP_VIEWER')
 _listeners = []
 _context = None
 

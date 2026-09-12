@@ -10,7 +10,7 @@ import logging
 import math
 from collections import OrderedDict
 
-log = logging.getLogger('WOTSTAT_LOCAL_MAPS')
+log = logging.getLogger('WOTSTAT_MAP_VIEWER')
 
 
 def _text(value, field):

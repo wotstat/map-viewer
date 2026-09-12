@@ -40,7 +40,7 @@ class LocalBattleApp(BattleEntry):
         entry = R.entries.dyn('battle')
         if not entry.isValid():
             entry = R.entries.default.battle
-        initialize(self, entry(), 'wotstat/localmaps',
+        initialize(self, entry(), 'wotstat/mapviewer',
                    GUI_CTRL_MODE_FLAG.CURSOR_ATTACHED,
                    DAAPIRootBridge(initCallback='registerBattleTest'))
 

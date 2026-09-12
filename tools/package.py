@@ -7,7 +7,7 @@ version = sys.argv[1]
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 stage = os.path.join(root, '.build')
 with open(os.path.join(stage, 'meta.xml'), 'wb') as output:
-    output.write('<root><id>wotstat.local-maps</id><version>%s</version><name>Local Maps</name><description>Local map viewer for World of Tanks and Mir Tankov</description></root>' % version)
+    output.write('<root><id>wotstat.map-viewer</id><version>%s</version><name>Map Viewer</name><description>Local map viewer for World of Tanks and Mir Tankov</description></root>' % version)
 for directory, unused, files in os.walk(stage):
     for name in files:
         if name.endswith('.py'):
@@ -18,7 +18,7 @@ for directory, unused, files in os.walk(stage):
                 target.write(data)
             relative = os.path.relpath(filename, stage).replace('\\', '/')
             py_compile.compile(filename, dfile=relative, doraise=True)
-artifact = os.path.join(root, 'dist', 'wotstat.local-maps_%s.mtmod' % version)
+artifact = os.path.join(root, 'dist', 'wotstat.map-viewer_%s.mtmod' % version)
 with zipfile.ZipFile(artifact, 'w', zipfile.ZIP_STORED) as archive:
     for directory, unused, files in os.walk(stage):
         for name in files:

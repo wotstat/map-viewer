@@ -1,13 +1,13 @@
 # Архитектура
 
 Мод загружает клиентскую геометрию без серверного боя и Avatar.
-Python-код находится в `res/scripts/client/gui/mods/`, AS3 — в `as3/src/wotstat/localmaps/`.
+Python-код находится в `res/scripts/client/gui/mods/`, AS3 — в `as3/src/wotstat/mapviewer/`.
 
 ## Основные модули
 
 | Модуль | Ответственность |
 |---|---|
-| `mod_wotstat_local_maps.py`, `bootstrap.py` | Загрузка мода, F8, ModsList, окно выбора |
+| `mod_wotstat_map_viewer.py`, `bootstrap.py` | Загрузка мода, F8, ModsList, окно выбора |
 | `catalog.py`, `preview.py` | Карты и режимы из `ArenaType`, штатное превью |
 | `viewer.py`, `cleanup.py` | Сессия просмотра, переходы и восстановление ангара |
 | `flight.py` | Движение камеры, скорость и зум |
@@ -69,6 +69,7 @@ Ctrl включает `GUI_ENABLED` и отключает ввод камеры 
 на HUD, dropdown закрывается. M/V управляют видимостью миникарты и HUD;
 новый просмотр сбрасывает эти флаги.
 
+Python-пакет `wotstat_local_maps` сохранён как совместимый путь публичных интеграций.
 Реестр секций сохраняется между просмотрами; HUD отписывается от него при уничтожении.
 Встроенных секций нет. Внешние интеграции, включая vegetation, используют
 только [публичный API](debug-panel-api.md).

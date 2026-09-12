@@ -1,4 +1,4 @@
-package wotstat.localmaps {
+package wotstat.mapviewer {
     import flash.display.Sprite;
     import flash.events.Event;
     import flash.events.FocusEvent;

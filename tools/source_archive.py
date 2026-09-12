@@ -8,7 +8,7 @@ version = sys.argv[1]
 destination = os.path.join(root, 'dist')
 if not os.path.isdir(destination):
     os.makedirs(destination)
-artifact = os.path.join(destination, 'wotstat.local-maps_%s_source.zip' % version)
+artifact = os.path.join(destination, 'wotstat.map-viewer_%s_source.zip' % version)
 folders = ('res', 'as3/src', 'tools', 'tests', 'docs', '.vscode')
 files = ['README.md', '.gitignore', 'build.ps1', 'as3/asconfig.json']
 for folder in folders:

@@ -6,7 +6,7 @@
     "swf-version": 17,
     "source-path": ["src"],
     "external-library-path": ["libs"],
-    "output": "../.build/ide/wotstatLocalMaps.swf"
+    "output": "../.build/ide/wotstatMapViewer.swf"
   },
-  "mainClass": "wotstat.localmaps.MapBridge"
+  "mainClass": "wotstat.mapviewer.MapBridge"
 }

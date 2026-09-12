@@ -1,4 +1,4 @@
-package wotstat.localmaps {
+package wotstat.mapviewer {
     import flash.system.ApplicationDomain;
     import net.wg.infrastructure.events.LibraryLoaderEvent;
 

@@ -1,4 +1,4 @@
-package wotstat.localmaps {
+package wotstat.mapviewer {
     import flash.text.TextField;
     import flash.text.TextFormat;
     import net.wg.infrastructure.base.AbstractWindowView;
@@ -77,7 +77,7 @@ package wotstat.localmaps {
             modes.addEventListener(ListEvent.INDEX_CHANGE, onModeChanged);
             startButton.addEventListener(ButtonEvent.CLICK, onStart);
             closeButton.addEventListener(ButtonEvent.CLICK, onClose);
-            registerFlashComponentS(minimap, 'wotstatLocalMapsPreview');
+            registerFlashComponentS(minimap, 'wotstatMapViewerPreview');
         }
         public function as_setData(data:Array, labels:Object):void {
             window.title = labels.title;

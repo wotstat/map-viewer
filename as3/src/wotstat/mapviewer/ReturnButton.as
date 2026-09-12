@@ -1,4 +1,4 @@
-package wotstat.localmaps {
+package wotstat.mapviewer {
     import flash.display.GradientType;
     import flash.display.MovieClip;
     import flash.display.Shape;

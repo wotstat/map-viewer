@@ -14,13 +14,13 @@ from gui.Scaleform.framework.entities.abstract.AbstractWindowView import Abstrac
 from .catalog import loadCatalog
 from .localization import text, texts
 
-log = logging.getLogger('WOTSTAT_LOCAL_MAPS')
-SELECTOR = 'wotstatLocalMapsSelector'
-BRIDGE = 'wotstatLocalMapsBridge'
-MENU = 'wotstatLocalMapsMenu'
-PREVIEW = 'wotstatLocalMapsPreview'
-MINIMAP = 'wotstatLocalMapsMinimap'
-HUD = 'wotstatLocalMapsHUD'
+log = logging.getLogger('WOTSTAT_MAP_VIEWER')
+SELECTOR = 'wotstatMapViewerSelector'
+BRIDGE = 'wotstatMapViewerBridge'
+MENU = 'wotstatMapViewerMenu'
+PREVIEW = 'wotstatMapViewerPreview'
+MINIMAP = 'wotstatMapViewerMinimap'
+HUD = 'wotstatMapViewerHUD'
 bridge = None
 selector = None
 session = None
@@ -188,11 +188,11 @@ def install():
     from .space_hooks import install as installSpaceHooks
     installSpaceHooks(session)
     for settings in (
-        ViewSettings(SELECTOR, Selector, 'wotstatLocalMapsSelector.swf', WindowLayer.WINDOW, None, ScopeTemplates.DEFAULT_SCOPE),
-        ViewSettings(BRIDGE, Bridge, 'wotstatLocalMaps.swf', WindowLayer.MARKER, None, ScopeTemplates.GLOBAL_SCOPE, canDrag=False, canClose=False, isCentered=False),
+        ViewSettings(SELECTOR, Selector, 'wotstatMapViewerSelector.swf', WindowLayer.WINDOW, None, ScopeTemplates.DEFAULT_SCOPE),
+        ViewSettings(BRIDGE, Bridge, 'wotstatMapViewer.swf', WindowLayer.MARKER, None, ScopeTemplates.GLOBAL_SCOPE, canDrag=False, canClose=False, isCentered=False),
         ComponentSettings(MINIMAP, LocalMinimap, ScopeTemplates.DEFAULT_SCOPE),
         ComponentSettings(PREVIEW, LocalPreview, ScopeTemplates.DEFAULT_SCOPE),
-        ViewSettings(HUD, BattleBridge, 'wotstatLocalMapsBattle.swf', WindowLayer.VIEW, None, ScopeTemplates.DEFAULT_SCOPE, canDrag=False, canClose=False, isCentered=False),
+        ViewSettings(HUD, BattleBridge, 'wotstatMapViewerBattle.swf', WindowLayer.VIEW, None, ScopeTemplates.DEFAULT_SCOPE, canDrag=False, canClose=False, isCentered=False),
         ViewSettings(MENU, LocalMenu, 'ingameMenu.swf', WindowLayer.TOP_WINDOW, None, ScopeTemplates.DEFAULT_SCOPE, isModal=True, canClose=False, canDrag=False)):
         g_entitiesFactories.addSettings(settings)
     _keyOriginal, _mouseOriginal = game.handleKeyEvent, game.handleMouseEvent
@@ -202,9 +202,9 @@ def install():
     except ImportError:
         log.info('ModsList unavailable; use F8')
     else:
-        g_modsListApi.addModification(id='wotstat.local-maps', name=text('title'),
+        g_modsListApi.addModification(id='wotstat.map-viewer', name=text('title'),
                                     description=text('description'),
-                                    icon='gui/maps/wotstat/local_maps/modslist.png',
+                                    icon='gui/maps/wotstat/map_viewer/modslist.png',
                                     enabled=True, login=False, lobby=True, callback=showSelector)
     _installed = True
     log.info('Installed; open with F8 or ModsList')

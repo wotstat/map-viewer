@@ -1,4 +1,4 @@
-package wotstat.localmaps {
+package wotstat.mapviewer {
     import flash.display.DisplayObject;
     import flash.display.GradientType;
     import flash.display.Shape;
@@ -56,7 +56,7 @@ package wotstat.localmaps {
             minimap = App.utils.classFactory.getComponent('minimapUI', Minimap);
             minimap.name = 'minimap';
             addChild(minimap);
-            registerFlashComponentS(minimap, 'wotstatLocalMapsMinimap');
+            registerFlashComponentS(minimap, 'wotstatMapViewerMinimap');
             minimap.validateNow();
             minimap.setAllowedSizeIndex(sizeIndex);
             layoutMinimap();

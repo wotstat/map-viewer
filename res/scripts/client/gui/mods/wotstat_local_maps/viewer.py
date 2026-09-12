@@ -17,7 +17,7 @@ from gui.Scaleform.daapi.view.battle.shared.minimap.settings import TRANSFORM_FL
 from .minimap_bounds import getMinimapBounds
 from .localization import text
 
-log = logging.getLogger('WOTSTAT_LOCAL_MAPS')
+log = logging.getLogger('WOTSTAT_MAP_VIEWER')
 
 class LocalSession(object):
     def __init__(self):

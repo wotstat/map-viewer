@@ -1,6 +1,20 @@
 # coding: utf-8
 """Viewer-owned text. Map names and external sections keep their own translations."""
 
+_EVENT_LABELS = {
+    'en': (u'Dynamic events', u'Event %d: %s', u'Play / replay', u'Pause'),
+    'ru': (u'Динамические события', u'Событие %d: %s', u'Воспроизвести / повторить', u'Пауза'),
+    'pl': (u'Zdarzenia dynamiczne', u'Zdarzenie %d: %s', u'Odtwórz / powtórz', u'Pauza'),
+    'de': (u'Dynamische Ereignisse', u'Ereignis %d: %s', u'Abspielen / wiederholen', u'Pause'),
+    'cs': (u'Dynamické události', u'Událost %d: %s', u'Přehrát / opakovat', u'Pozastavit'),
+    'uk': (u'Динамічні події', u'Подія %d: %s', u'Відтворити / повторити', u'Пауза'),
+    'fr': (u'Événements dynamiques', u'Événement %d : %s', u'Lire / rejouer', u'Pause'),
+    'es': (u'Eventos dinámicos', u'Evento %d: %s', u'Reproducir / repetir', u'Pausa'),
+    'it': (u'Eventi dinamici', u'Evento %d: %s', u'Riproduci / ripeti', u'Pausa'),
+    'tr': (u'Dinamik olaylar', u'Olay %d: %s', u'Oynat / tekrarla', u'Duraklat'),
+    'hu': (u'Dinamikus események', u'%d. esemény: %s', u'Lejátszás / ismétlés', u'Szünet'),
+}
+
 _LABELS = {
     'en': dict(
         title=u'Local map viewer', description=u'Explore maps with a free camera, without entering a battle. F8.',
@@ -76,7 +90,10 @@ def texts(language=None):
         from helpers import getClientLanguage
         language = getClientLanguage()
     language = (language or '').lower().replace('_', '-').split('-')[0]
-    return dict(_LABELS.get(language, _LABELS['en']))
+    result = dict(_LABELS.get(language, _LABELS['en']))
+    result.update(zip(('dynamicEvents', 'dynamicEventName', 'eventPlay', 'eventPause'),
+                      _EVENT_LABELS.get(language, _EVENT_LABELS['en'])))
+    return result
 
 
 def text(key):

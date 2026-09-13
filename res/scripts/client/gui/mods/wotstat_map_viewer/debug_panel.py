@@ -32,6 +32,10 @@ def _validValue(control, value):
     kind = control['type']
     if kind == 'text':
         return False
+    if kind == 'timeline':
+        return (isinstance(value, dict) and set(value) == set(('position', 'playing'))
+                and _number(value['position']) and 0 <= value['position'] <= 100
+                and isinstance(value['playing'], bool))
     if kind == 'slider':
         return _number(value) and control['min'] <= value <= control['max']
     if kind == 'checkbox':
@@ -61,6 +65,11 @@ def _control(data):
         if not isinstance(suffix, basestring):
             raise ValueError('Slider suffix must be a string')
         result.update(min=low, max=high, step=step, suffix=suffix)
+    elif result['type'] == 'timeline':
+        for field in ('playTooltip', 'pauseTooltip'):
+            result[field] = data.get(field, '')
+            if not isinstance(result[field], basestring):
+                raise ValueError('Timeline tooltip must be a string')
     elif result['type'] == 'dropdown':
         options = data.get('options')
         if not isinstance(options, (list, tuple)) or not options:
@@ -76,10 +85,10 @@ def _control(data):
                 raise ValueError('Dropdown option values must be unique')
             result['options'].append(dict(label=_text(option.get('label'), 'option label'), value=value))
     elif result['type'] != 'checkbox':
-        raise ValueError('Supported control types: slider, checkbox, dropdown')
+        raise ValueError('Supported control types: slider, checkbox, dropdown, timeline, text')
     if 'value' not in data or not _validValue(result, data['value']):
         raise ValueError('Invalid initial value for control %s' % result['id'])
-    result['value'] = data['value']
+    result['value'] = copy.deepcopy(data['value'])
     return result
 
 
@@ -116,14 +125,14 @@ class SettingsRegistry(object):
                 for key, section in self._sections.iteritems()]
 
     def getValue(self, sectionID, controlID):
-        return self._sections[sectionID]['controls'][controlID]['value']
+        return copy.deepcopy(self._sections[sectionID]['controls'][controlID]['value'])
 
     def setValue(self, sectionID, controlID, value):
         control = self._sections[sectionID]['controls'][controlID]
         if not _validValue(control, value):
             raise ValueError('Invalid value for %s/%s' % (sectionID, controlID))
         if control['value'] != value:
-            control['value'] = value
+            control['value'] = copy.deepcopy(value)
             self._emit('value', sectionID, controlID, value)
 
     def changeValue(self, sectionID, controlID, value):

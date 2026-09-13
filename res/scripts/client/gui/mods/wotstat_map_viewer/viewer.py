@@ -51,6 +51,7 @@ class LocalSession(object):
         self._ctrlKeys = set()
         self._eventContext = None
         self.visibilityMask = None
+        self.dynamicEvents = None
 
     def start(self, arenaID):
         from . import bootstrap as ui
@@ -233,10 +234,24 @@ class LocalSession(object):
 
     def notifyReady(self):
         if self._eventContext is None and self.active and not self.stopping:
+            from .dynamic_events import DynamicEvents
+            from .bootstrap import MINIMAP
+            self.dynamicEvents = DynamicEvents(self.spaceID, self.arena, self.hud.getComponent(MINIMAP))
+            self._cleanup.defer('stop dynamic events', self._stopDynamicEvents)
+            try:
+                self.dynamicEvents.start()
+            except Exception:
+                log.exception('Dynamic event initialization failed')
+                self._stopDynamicEvents()
             from . import events
             self._eventContext = events.ViewerContext(self.spaceID, self.arenaID,
                 self.arena.geometryName, self.arena.gameplayID, self.visibilityMask)
             events._emit('ready', self._eventContext)
+
+    def _stopDynamicEvents(self):
+        controller, self.dynamicEvents = self.dynamicEvents, None
+        if controller is not None:
+            controller.stop()
 
     def _restoreLobby(self):
         if not self._restoreAllowed:
@@ -433,6 +448,7 @@ class LocalMinimap(MinimapMeta):
         super(LocalMinimap, self).__init__()
         self.native = None
         self.entries = []
+        self._eventLayers = {}
 
     def onMinimapClicked(self, *args):
         pass
@@ -482,7 +498,33 @@ class LocalMinimap(MinimapMeta):
         self.entries.append(entry)
         return entry
 
+    def setEventLayers(self, layers):
+        from gui.Scaleform.genConsts.BATTLE_MINIMAP_CONSTS import BATTLE_MINIMAP_CONSTS
+        from constants import MinimapLayerType
+        import ResMgr
+        self.clearEventLayers()
+        types = {MinimapLayerType.BASE: BATTLE_MINIMAP_CONSTS.SCENARIO_EVENT_EFFECT,
+                 MinimapLayerType.ALERT: BATTLE_MINIMAP_CONSTS.SCENARIO_EVENT_ALERT}
+        for layerID, (path, layerType) in sorted(layers.items()):
+            if layerType in types and ResMgr.isFile(path):
+                self.as_setScenarioEventS(layerID, 'img://' + path, types[layerType])
+                self.as_setScenarioEventVisibleS(layerID, False)
+                self._eventLayers[layerID] = False
+
+    def setEventLayerVisibility(self, visible):
+        for layerID, previous in self._eventLayers.items():
+            current = layerID in visible
+            if previous != current:
+                self.as_setScenarioEventVisibleS(layerID, current)
+                self._eventLayers[layerID] = current
+
+    def clearEventLayers(self):
+        for layerID in self._eventLayers:
+            self.as_clearScenarioEventS(layerID)
+        self._eventLayers.clear()
+
     def _dispose(self):
+        self.clearEventLayers()
         if self.native is not None:
             for entry in self.entries:
                 self.native.delEntry(entry)

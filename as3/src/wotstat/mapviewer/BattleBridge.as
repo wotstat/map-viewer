@@ -110,7 +110,11 @@ package wotstat.mapviewer {
         private function onBack(event:ButtonEvent):void { returnToHangar(); }
         private function focusPanel():void { setFocus(this); }
         private function onSettingChanged(section:String, id:String, value:Object):void {
-            settingChanged(section, id, value);
+            // AS3 objects cross DAAPI as PyGFxValue, not Python dictionaries.
+            // Send the timeline fields as scalars; legacy controls keep 3 args.
+            if (value != null && typeof value == 'object' && value.hasOwnProperty('position') && value.hasOwnProperty('playing'))
+                settingChanged(section, id, value.position, value.playing);
+            else settingChanged(section, id, value);
         }
         private function onInputLost(event:Event):void { inputLost(); }
         private function onStageResize(event:StageResizeEvent):void {

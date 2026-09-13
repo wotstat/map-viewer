@@ -39,7 +39,7 @@ package wotstat.mapviewer {
             window.useBottomBtns = true;
             mapLabel = makeLabel('', 8, 4, 250, 14);
             mapName = makeLabel('', 286, 0, PREVIEW_SIZE, 20);
-            maps = App.utils.classFactory.getComponent('ScrollingList', ScrollingList);
+            maps = new MapList();
             maps.name = 'maps';
             maps.x = 8; maps.y = 30;
             maps.setSize(258, 374);
@@ -85,6 +85,7 @@ package wotstat.mapviewer {
             startButton.label = labels.start;
             closeButton.label = labels.close;
             rows = data;
+            MapList(maps).eventsLabel = labels.dynamicEvents;
             maps.dataProvider = new DataProvider(rows);
             maps.selectedIndex = rows.length ? 0 : -1;
             maps.validateNow();

@@ -23,6 +23,7 @@ def groupArenas(records):
 def loadCatalog():
     import ArenaType
     import ResMgr
+    from constants import AUTH_REALM
     from helpers import i18n
     records = []
     for arenaID, arena in ArenaType.g_cache.iteritems():
@@ -31,6 +32,9 @@ def loadCatalog():
         label = i18n.makeString('#arenas:type/%s/name' % arena.gameplayName)
         label = displayName(label, arena.gameplayName)
         records.append(dict(key=arenaID, geometry=arena.geometryName,
+                            dynamicEvents=(AUTH_REALM == 'EU' and
+                                           not arena.geometryName.endswith(('_sm24', '_sm25')) and
+                                           bool(getattr(arena, 'minimapLayers', None))),
                             name=displayName(arena.name, arena.geometryName),
                             mode=arena.gameplayName, modeLabel=label, size=arena.maxPlayersInTeam,
                             time=arena.roundLength / 60, description='',

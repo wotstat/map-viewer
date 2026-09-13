@@ -132,9 +132,11 @@ class BattleBridge(View):
         log.error('Native viewer controls loading failed: %s', message)
         BigWorld.callback(0.0, session.stop)
 
-    def settingChanged(self, sectionID, controlID, value):
+    def settingChanged(self, sectionID, controlID, value, playing=None):
         if session.active and session.cursorControl and not session.stopping:
             from .debug_panel import g_registry
+            if playing is not None:
+                value = dict(position=value, playing=playing)
             g_registry.changeValue(sectionID, controlID, value)
 
     def inputLost(self):

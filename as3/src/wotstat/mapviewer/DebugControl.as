@@ -10,6 +10,9 @@ package wotstat.mapviewer {
     import net.wg.gui.components.controls.CheckBox;
     import net.wg.gui.components.controls.DropdownMenu;
     import net.wg.gui.components.controls.Slider;
+    import net.wg.gui.components.controls.SoundButtonEx;
+    import net.wg.gui.components.controls.UILoaderAlt;
+    import scaleform.clik.events.ButtonEvent;
     import scaleform.clik.data.DataProvider;
     import scaleform.clik.events.ListEvent;
     import scaleform.clik.events.SliderEvent;
@@ -28,6 +31,10 @@ package wotstat.mapviewer {
         private var contentLabel:TextField;
         private var valueLabel:TextField;
         private var tooltip:DebugTooltip;
+        public var playback:SoundButtonEx;
+        private var playbackIcon:UILoaderAlt;
+        private var playbackTooltip:DebugTooltip;
+        private var dragging:Boolean = false;
 
         public function DebugControl(section:String, data:Object, w:int, callback:Function) {
             super();
@@ -42,18 +49,34 @@ package wotstat.mapviewer {
                 field.autoSize = TextFieldAutoSize.LEFT; field.text = data.text;
                 rowHeight = Math.ceil(field.height) + 8;
                 graphics.beginFill(0, 0); graphics.drawRect(0, 0, w, rowHeight); graphics.endFill();
-            } else if (data.type == 'slider') {
+            } else if (data.type == 'slider' || data.type == 'timeline') {
                 contentLabel = label(data.label, 0, w - 96);
                 valueLabel = label('', w - 96, 96);
                 var format:TextFormat = valueLabel.defaultTextFormat;
                 format.align = 'right'; valueLabel.defaultTextFormat = format;
                 slider = App.utils.classFactory.getComponent('Slider', Slider);
                 slider.name = 'slider'; slider.y = 28; slider.width = w;
-                slider.minimum = data.min; slider.maximum = data.max;
-                slider.snapInterval = data.step; slider.snapping = false;
+                slider.minimum = data.type == 'timeline' ? 0 : data.min;
+                slider.maximum = data.type == 'timeline' ? 100 : data.max;
+                slider.snapInterval = data.type == 'timeline' ? 0.1 : data.step; slider.snapping = false;
                 slider.liveDragging = true;
                 addChild(slider); slider.validateNow();
                 rowHeight = 61;
+                if (data.type == 'timeline') {
+                    contentLabel.multiline = contentLabel.wordWrap = true;
+                    contentLabel.autoSize = TextFieldAutoSize.LEFT;
+                    playback = App.utils.classFactory.getComponent('ButtonNormal', SoundButtonEx);
+                    playback.name = 'playback'; playback.label = ''; playback.width = 32; playback.height = 24;
+                    addChild(playback); playback.validateNow();
+                    playbackIcon = new UILoaderAlt(); playbackIcon.mouseEnabled = playbackIcon.mouseChildren = false;
+                    playbackIcon.autoSize = true;
+                    playbackIcon.setOriginalWidth(16); playbackIcon.setOriginalHeight(16);
+                    addChild(playbackIcon);
+                    playbackTooltip = new DebugTooltip(playback, '');
+                    playback.addEventListener(ButtonEvent.CLICK, onPlayback);
+                    slider.addEventListener(MouseEvent.MOUSE_DOWN, onSeekStart);
+                    layoutTimeline(w);
+                }
             } else if (data.type == 'checkbox') {
                 checkbox = App.utils.classFactory.getComponent('CheckBox', CheckBox);
                 checkbox.name = 'checkbox'; checkbox.label = data.label; checkbox.width = w;
@@ -99,9 +122,12 @@ package wotstat.mapviewer {
             contentWidth = w;
             updating = true;
             if (slider) {
-                contentLabel.width = w - 96;
-                valueLabel.x = w - 96;
-                slider.width = w; slider.validateNow();
+                if (playback) layoutTimeline(w);
+                else {
+                    contentLabel.width = w - 96;
+                    valueLabel.x = w - 96;
+                    slider.width = w; slider.validateNow();
+                }
             } else if (checkbox) {
                 checkbox.width = w; checkbox.validateNow();
             } else if (dropdown) {
@@ -118,7 +144,13 @@ package wotstat.mapviewer {
         public function setValue(value:Object):void {
             updating = true;
             model.value = value;
-            if (slider) {
+            if (playback) {
+                if (!dragging) slider.value = Number(value.position);
+                var tenths:int = Math.round(Number(value.position) * 10);
+                valueLabel.text = String(int(tenths / 10)) + '.' + String(tenths % 10) + '%';
+                playbackIcon.source = '../maps/icons/buttons/' + (value.playing ? 'pause' : 'play') + '.png';
+                playbackTooltip.setText(value.playing ? model.pauseTooltip : model.playTooltip);
+            } else if (slider) {
                 slider.value = Number(value);
                 valueLabel.text = String(Math.round(Number(value) * 100) / 100) + model.suffix;
             } else if (checkbox) {
@@ -134,7 +166,12 @@ package wotstat.mapviewer {
         private function onChanged(event:Event):void {
             if (updating) return;
             var value:Object;
-            if (slider) {
+            if (playback) {
+                value = {position:Math.max(0, Math.min(100, Math.round(slider.value * 10) / 10)), playing:false};
+                if (changed != null && (value.position != model.value.position || model.value.playing))
+                    changed(sectionID, controlID, value);
+                return;
+            } else if (slider) {
                 if (slider.value <= model.min) value = model.min;
                 else if (slider.value >= model.max) value = model.max;
                 else value = Math.max(model.min, Math.min(model.max, model.min +
@@ -145,6 +182,30 @@ package wotstat.mapviewer {
                 value = model.options[dropdown.selectedIndex].value;
             }
             if (value !== model.value && changed != null) changed(sectionID, controlID, value);
+        }
+        private function layoutTimeline(w:int):void {
+            contentLabel.width = w; contentLabel.text = model.label;
+            playback.x = 0; playback.y = Math.ceil(contentLabel.height) + 4;
+            slider.x = 40; slider.y = playback.y;
+            slider.width = w - 90; slider.validateNow();
+            valueLabel.x = w - 44; valueLabel.y = playback.y;
+            valueLabel.width = 44;
+            playbackIcon.x = playback.x + 8; playbackIcon.y = playback.y + 4;
+            rowHeight = Math.ceil(playback.y) + 32;
+        }
+        private function onPlayback(event:ButtonEvent):void {
+            if (!updating && changed != null)
+                changed(sectionID, controlID, {position:model.value.position, playing:!model.value.playing});
+        }
+        private function onSeekStart(event:MouseEvent):void {
+            dragging = true;
+            if (stage) stage.addEventListener(MouseEvent.MOUSE_UP, onSeekEnd);
+            if (model.value.playing && changed != null)
+                changed(sectionID, controlID, {position:model.value.position, playing:false});
+        }
+        private function onSeekEnd(event:MouseEvent):void {
+            dragging = false;
+            if (stage) stage.removeEventListener(MouseEvent.MOUSE_UP, onSeekEnd);
         }
         private function onWheel(event:MouseEvent):void {
             // A wheel adjustment must not also scroll the containing panel.
@@ -163,6 +224,8 @@ package wotstat.mapviewer {
         }
         public function releaseInput():void {
             if (tooltip) tooltip.hide();
+            if (playbackTooltip) playbackTooltip.hide();
+            onSeekEnd(null);
             if (dropdown) dropdown.close();
         }
         public function dispose():void {
@@ -170,9 +233,16 @@ package wotstat.mapviewer {
             tooltip.dispose(); tooltip = null;
             removeEventListener(MouseEvent.MOUSE_WHEEL, onWheel);
             if (slider) {
+                slider.removeEventListener(MouseEvent.MOUSE_DOWN, onSeekStart);
                 slider.removeEventListener(SliderEvent.VALUE_CHANGE, onChanged);
                 slider.removeEventListener(Event.CHANGE, onChanged);
                 slider.dispose(); slider = null;
+            }
+            if (playback) {
+                playback.removeEventListener(ButtonEvent.CLICK, onPlayback);
+                playbackTooltip.dispose(); playbackTooltip = null;
+                removeChild(playbackIcon); playbackIcon.dispose(); playbackIcon = null;
+                playback.dispose(); playback = null;
             }
             if (checkbox) {
                 checkbox.removeEventListener(Event.SELECT, onChanged);

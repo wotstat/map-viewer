@@ -92,9 +92,9 @@ C:\Python27\python.exe -B tools\source_archive.py 1.6.0
 
 ## CI/CD
 
-Workflow `.github/workflows/release.yml` запускается при отправке тега `v*`
-(например, `v1.6.1`) и вручную через Actions → release → Run workflow.
-При ручном запуске версия задаётся без `v`.
+Workflow `.github/workflows/release.yml` запускается при отправке тега с версией
+без префикса (например, `1.6.1`) и вручную через Actions → release → Run workflow.
+При ручном запуске версия задаётся в том же формате.
 
 Windows runner устанавливает Python 2.7, Java 21 и Royale 0.9.12, запускает тесты
 и `build.ps1`. Клиентские SWC берутся из репозитория; `tools/setup_ci.ps1`

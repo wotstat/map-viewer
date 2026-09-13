@@ -2,11 +2,11 @@ name: release
 
 on:
   push:
-    tags: ['v*']
+    tags: ['[0-9]*']
   workflow_dispatch:
     inputs:
       version:
-        description: Mod version (without v)
+        description: Mod version
         required: true
         default: '1.6.0'
 
@@ -47,7 +47,7 @@ jobs:
           $version = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
             $env:MANUAL_VERSION
           } else {
-            $env:TAG_NAME -replace '^v', ''
+            $env:TAG_NAME
           }
           if ($version -notmatch '^\d+\.\d+\.\d+(?:[.-][0-9A-Za-z]+)*$') { throw 'Invalid version' }
           "VERSION=$version" >> $env:GITHUB_ENV
@@ -74,7 +74,7 @@ jobs:
 
       - name: Publish prerelease
         uses: softprops/action-gh-release@v2
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'push' && github.ref_type == 'tag'
         with:
           draft: false
           prerelease: true

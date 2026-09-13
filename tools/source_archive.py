@@ -9,7 +9,7 @@ destination = os.path.join(root, 'dist')
 if not os.path.isdir(destination):
     os.makedirs(destination)
 artifact = os.path.join(destination, 'wotstat.map-viewer_%s_source.zip' % version)
-folders = ('res', 'as3/src', 'tools', 'tests', 'docs', '.vscode')
+folders = ('res', 'as3/src', 'as3/libs', 'tools', 'tests', 'docs', '.vscode', '.github')
 files = ['README.md', '.gitignore', 'build.ps1', 'as3/asconfig.json']
 for folder in folders:
     for directory, unused, names in os.walk(os.path.join(root, folder)):

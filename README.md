@@ -70,7 +70,8 @@ Play/Pause. Перетаскивание ставит событие на пау
 
 Нужны Python 2.7, Apache Royale 0.9.12, OpenJDK 21 и `playerglobal.swc`
 для Flash Player 17 в `<Royale>/frameworks/libs/player/17.0/`.
-Пути Python, Royale и Java задаются в `build.ps1`.
+Пути Python, Royale и Java задаются параметрами `-Python`, `-Royale` и `-JavaHome`
+в `build.ps1`; значения по умолчанию подходят для локального окружения разработки.
 
 Из корня проекта (путь к игре замените своим):
 
@@ -88,6 +89,22 @@ C:\Python27\python.exe -B tools\source_archive.py 1.6.0
 `-Version` переопределяет версию обоих пакетов. Для сборки на библиотеках WoT
 передайте его каталог в `extract_libraries.py`. Игровые библиотеки используются как внешние зависимости
 и в пакет не входят.
+
+## CI/CD
+
+Workflow `.github/workflows/release.yml` запускается при отправке тега `v*`
+(например, `v1.6.1`) и вручную через Actions → release → Run workflow.
+При ручном запуске версия задаётся без `v`.
+
+Windows runner устанавливает Python 2.7, Java 21 и Royale 0.9.12, запускает тесты
+и `build.ps1`. Клиентские SWC берутся из репозитория; `tools/setup_ci.ps1`
+скачивает Royale и Flash Player 17 API с проверкой контрольных сумм.
+Установленная игра и отдельный runner не требуются.
+
+Оба пакета доступны как Actions artifacts. Запуск по тегу также создаёт GitHub
+prerelease и прикладывает `.wotmod` и `.mtmod`; ручной запуск только собирает
+артефакты. Для публикации используется штатный `GITHUB_TOKEN` с `contents: write`.
+Игровую проверку перед выпуском нужно выполнять отдельно.
 
 Для разработки: [архитектура](docs/architecture.md),
 [API интеграций](docs/debug-panel-api.md), [проверка выпуска](docs/release-checklist.md).

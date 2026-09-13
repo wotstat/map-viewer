@@ -1,0 +1,84 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Mod version (without v)
+        required: true
+        default: '1.6.0'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 2.7
+        run: |
+          choco install python2 --version=2.7.18 --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'Python installation failed' }
+          & C:/Python27/python.exe -B -c "import sys; assert sys.version_info[:2] == (2, 7)"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Prepare Royale SDK
+        run: |
+          $sdk = & ./tools/setup_ci.ps1 -Destination "$env:RUNNER_TEMP/royale-sdk"
+          "ROYALE_HOME=$sdk" >> $env:GITHUB_ENV
+
+      - name: Compute version
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          $version = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+            $env:MANUAL_VERSION
+          } else {
+            $env:TAG_NAME -replace '^v', ''
+          }
+          if ($version -notmatch '^\d+\.\d+\.\d+(?:[.-][0-9A-Za-z]+)*$') { throw 'Invalid version' }
+          "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Test
+        run: C:/Python27/python.exe -B -m unittest discover -s tests -v
+
+      - name: Build
+        run: ./build.ps1 -Version $env:VERSION -Royale $env:ROYALE_HOME -JavaHome $env:JAVA_HOME
+
+      - name: Archive WoT package
+        uses: actions/upload-artifact@v4
+        with:
+          name: wotstat.map-viewer_${{ env.VERSION }}.wotmod
+          path: dist/wotstat.map-viewer_${{ env.VERSION }}.wotmod
+          if-no-files-found: error
+
+      - name: Archive MT package
+        uses: actions/upload-artifact@v4
+        with:
+          name: wotstat.map-viewer_${{ env.VERSION }}.mtmod
+          path: dist/wotstat.map-viewer_${{ env.VERSION }}.mtmod
+          if-no-files-found: error
+
+      - name: Publish prerelease
+        uses: softprops/action-gh-release@v2
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        with:
+          draft: false
+          prerelease: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/wotstat.map-viewer_${{ env.VERSION }}.wotmod
+            dist/wotstat.map-viewer_${{ env.VERSION }}.mtmod

@@ -70,7 +70,11 @@ package wotstat.mapviewer {
                     addChild(playback); playback.validateNow();
                     playbackIcon = new UILoaderAlt(); playbackIcon.mouseEnabled = playbackIcon.mouseChildren = false;
                     playbackIcon.autoSize = true;
-                    playbackIcon.setOriginalWidth(16); playbackIcon.setOriginalHeight(16);
+                    // The native icons are 24x24. Keep that as the loader size and
+                    // scale its container immediately so an async source swap cannot
+                    // expose the unscaled icon for one frame.
+                    playbackIcon.setOriginalWidth(24); playbackIcon.setOriginalHeight(24);
+                    playbackIcon.scaleX = playbackIcon.scaleY = 2 / 3;
                     addChild(playbackIcon);
                     playbackTooltip = new DebugTooltip(playback, '');
                     playback.addEventListener(ButtonEvent.CLICK, onPlayback);

@@ -191,7 +191,7 @@ def install():
     installSpaceHooks(session)
     for settings in (
         ViewSettings(SELECTOR, Selector, 'wotstatMapViewerSelector.swf', WindowLayer.WINDOW, None, ScopeTemplates.DEFAULT_SCOPE),
-        ViewSettings(BRIDGE, Bridge, 'wotstatMapViewer.swf', WindowLayer.MARKER, None, ScopeTemplates.GLOBAL_SCOPE, canDrag=False, canClose=False, isCentered=False),
+        ViewSettings(BRIDGE, Bridge, 'wotstatMapViewer.swf', WindowLayer.WINDOW, None, ScopeTemplates.GLOBAL_SCOPE, canDrag=False, canClose=False, isCentered=False),
         ComponentSettings(MINIMAP, LocalMinimap, ScopeTemplates.DEFAULT_SCOPE),
         ComponentSettings(PREVIEW, LocalPreview, ScopeTemplates.DEFAULT_SCOPE),
         ViewSettings(HUD, BattleBridge, 'wotstatMapViewerBattle.swf', WindowLayer.VIEW, None, ScopeTemplates.DEFAULT_SCOPE, canDrag=False, canClose=False, isCentered=False),

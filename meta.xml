@@ -1,0 +1,6 @@
+<root>
+  <id>wotstat.map-viewer</id>
+  <version>{{VERSION}}</version>
+  <name>Map Viewer</name>
+  <description>Local map viewer for World of Tanks and Mir Tankov</description>
+</root>

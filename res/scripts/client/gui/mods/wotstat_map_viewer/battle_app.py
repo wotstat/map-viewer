@@ -13,41 +13,41 @@ from gui.impl.gen import R
 from gui.Scaleform.battle_entry import BattleEntry
 from gui.Scaleform.framework.application import AppEntry, DAAPIRootBridge
 
-
 class _FlashRoot(object):
-    def __init__(self, owner):
-        self.owner = owner
-        self.onStatusChanged = Event()
 
-    def load(self):
-        self.owner.createComponent(swf='battle.swf')
+  def __init__(self, owner):
+    self.owner = owner
+    self.onStatusChanged = Event()
 
-    def destroy(self):
-        self.onStatusChanged.clear()
-        self.owner = None
+  def load(self):
+    self.owner.createComponent(swf='battle.swf')
 
+  def destroy(self):
+    self.onStatusChanged.clear()
+    self.owner = None
 
 class LocalBattleApp(BattleEntry):
-    def __init__(self):
-        self._arenaGuiType = ARENA_GUI_TYPE.RANDOM
-        self._BattleEntry__input = None
-        original = AppEntry.__init__.im_func
-        localGlobals = dict(original.func_globals)
-        localGlobals['MainWindow'] = lambda content: _FlashRoot(self)
-        initialize = FunctionType(original.func_code, localGlobals,
-                                  original.func_name, original.func_defaults,
-                                  original.func_closure)
-        entry = R.entries.dyn('battle')
-        if not entry.isValid():
-            entry = R.entries.default.battle
-        initialize(self, entry(), 'wotstat/mapviewer',
-                   GUI_CTRL_MODE_FLAG.CURSOR_ATTACHED,
-                   DAAPIRootBridge(initCallback='registerBattleTest'))
 
-    def afterCreate(self):
-        # BattleGameInputMgr requires Avatar; all actual UI managers are stock.
-        AppEntry.afterCreate(self)
+  def __init__(self):
+    self._arenaGuiType = ARENA_GUI_TYPE.RANDOM
+    self._BattleEntry__input = None
+    original = AppEntry.__init__.im_func
+    localGlobals = dict(original.func_globals)
+    localGlobals['MainWindow'] = lambda content: _FlashRoot(self)
+    initialize = FunctionType(original.func_code, localGlobals,
+                 original.func_name, original.func_defaults,
+                 original.func_closure)
+    entry = R.entries.dyn('battle')
+    if not entry.isValid():
+      entry = R.entries.default.battle
+    initialize(self, entry(), 'wotstat/mapviewer',
+          GUI_CTRL_MODE_FLAG.CURSOR_ATTACHED,
+          DAAPIRootBridge(initCallback='registerBattleTest'))
 
-    def _getRequiredLibraries(self):
-        return super(LocalBattleApp, self)._getRequiredLibraries() + [
-            'minimap.swf', 'minimapEntriesLibrary.swf']
+  def afterCreate(self):
+    # BattleGameInputMgr requires Avatar; all actual UI managers are stock.
+    AppEntry.afterCreate(self)
+
+  def _getRequiredLibraries(self):
+    return super(LocalBattleApp, self)._getRequiredLibraries() + [
+      'minimap.swf', 'minimapEntriesLibrary.swf']

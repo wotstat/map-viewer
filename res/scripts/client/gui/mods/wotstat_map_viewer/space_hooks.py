@@ -9,32 +9,32 @@ from types import FunctionType
 import CGF
 import BigWorld
 
-
 def install(session):
-    # This UDO exists only in MT. WoT has no corresponding constructor to fix.
-    import ResMgr
-    if not ResMgr.isFile('scripts/client/SoundZoneTrigger.pyc'):
-        return
-    import SoundZoneTrigger
-    original = SoundZoneTrigger.SoundZoneTrigger.__init__
+  # This UDO exists only in MT. WoT has no corresponding constructor to fix.
+  import ResMgr
+  if not ResMgr.isFile('scripts/client/SoundZoneTrigger.pyc'):
+    return
+  import SoundZoneTrigger
+  original = SoundZoneTrigger.SoundZoneTrigger.__init__
 
-    class ZoneCGF(object):
-        def __getattr__(self, name):
-            return getattr(CGF, name)
+  class ZoneCGF(object):
 
-        def GameObject(self, spaceID, *args):
-            if session.active and spaceID == 0 and session.spaceID is not None:
-                spaceID = session.spaceID
-            return CGF.GameObject(spaceID, *args)
+    def __getattr__(self, name):
+      return getattr(CGF, name)
 
-    function = original.im_func
-    localGlobals = dict(function.func_globals, CGF=ZoneCGF())
-    scoped = FunctionType(function.func_code, localGlobals, function.func_name,
-                          function.func_defaults, function.func_closure)
+    def GameObject(self, spaceID, *args):
+      if session.active and spaceID == 0 and session.spaceID is not None:
+        spaceID = session.spaceID
+      return CGF.GameObject(spaceID, *args)
 
-    def initialize(zone):
-        if session.active and session.spaceID is not None:
-            return scoped(zone)
-        return original(zone)
+  function = original.im_func
+  localGlobals = dict(function.func_globals, CGF=ZoneCGF())
+  scoped = FunctionType(function.func_code, localGlobals, function.func_name,
+             function.func_defaults, function.func_closure)
 
-    SoundZoneTrigger.SoundZoneTrigger.__init__ = initialize
+  def initialize(zone):
+    if session.active and session.spaceID is not None:
+      return scoped(zone)
+    return original(zone)
+
+  SoundZoneTrigger.SoundZoneTrigger.__init__ = initialize

@@ -151,7 +151,9 @@ if context is not None:        # Подключение после ready под�
 ```
 
 `context` — неизменяемый `ViewerContext` с полями `spaceID`, `arenaID`,
-`geometryName`, `gameplayID`, `visibilityMask`. Подписка идемпотентна, ошибки
+`geometryName`, `gameplayID`, `visibilityMask`. Для просмотра ангара `arenaID` и
+`gameplayID` равны `None`, а `geometryName` содержит имя ангарного пространства.
+Подписка идемпотентна, ошибки
 одного слушателя логируются и не прерывают остальных. События посылаются один раз
 на готовый просмотр: `ready` → `stopping` → `stopped`. Если загрузка не дошла до
 готовности, этих событий нет. Подписки живут до явного удаления; ресурсы мира

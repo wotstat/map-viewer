@@ -61,7 +61,7 @@ class Selector(AbstractWindowView):
         log.info('Own selector ready, maps=%d', len(self.rows))
 
     def modeSelected(self, arenaID):
-        self.selected = int(arenaID)
+        self.selected = arenaID
 
     def startViewing(self):
         arenaID = self.selected
@@ -111,7 +111,8 @@ class BattleBridge(View):
                 from .catalog import displayName
                 from helpers import i18n
                 arena = session.arena
-                mode = displayName(i18n.makeString('#arenas:type/%s/name' % arena.gameplayName), arena.gameplayName)
+                mode = text('hangar') if session.isHangar else displayName(
+                    i18n.makeString('#arenas:type/%s/name' % arena.gameplayName), arena.gameplayName)
                 self.flashObject.as_setViewerData(displayName(arena.name, arena.geometryName), mode, g_registry.snapshot(), texts())
                 self.flashObject.as_setVisibility(session.interfaceVisible, session.minimapVisible)
                 g_registry.subscribe(self._settingsChanged)

@@ -18,7 +18,14 @@ package wotstat.mapviewer {
             for (var i:int = 0; i < _renderers.length; ++i) {
                 var renderer:DropDownListItemRendererSound = _renderers[i] as DropDownListItemRendererSound;
                 if (!renderer) continue;
+                // Restore the native text width when a renderer is reused after scrolling.
+                renderer.invalidateSize();
+                renderer.validateNow();
                 var badge:TextField = renderer.getChildByName('wotstatEventsBadge') as TextField;
+                if (i >= items.length || !items[i].dynamicEvents) {
+                    if (badge) badge.visible = false;
+                    continue;
+                }
                 if (!badge) {
                     badge = App.textMgr.createTextField();
                     badge.name = 'wotstatEventsBadge';
@@ -26,15 +33,14 @@ package wotstat.mapviewer {
                     badge.embedFonts = true; badge.selectable = badge.mouseEnabled = false;
                     renderer.addChild(badge);
                 }
-                badge.text = i < items.length && items[i].dynamicEvents ? eventsLabel : '';
+                badge.visible = true;
+                badge.text = eventsLabel;
                 badge.scaleX = badge.scaleY = 1;
                 badge.width = badge.textWidth + 5; badge.height = 20;
-                var badgeWidth:Number = badge.width;
                 badge.scaleX = 1 / renderer.scaleX; badge.scaleY = 1 / renderer.scaleY;
-                badge.x = (renderer.width - badgeWidth - 6) / renderer.scaleX;
+                badge.x = renderer.textField.x + renderer.textField.width - badge.width - 6;
                 badge.y = 3 / renderer.scaleY;
-                renderer.textField.width = (badge.text ? badge.x - 4 / renderer.scaleX :
-                    (renderer.width - 6) / renderer.scaleX) - renderer.textField.x;
+                renderer.textField.width = badge.x - renderer.textField.x - 4;
             }
         }
     }

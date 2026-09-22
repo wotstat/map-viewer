@@ -122,8 +122,10 @@ package wotstat.mapviewer {
         private function onModeChanged(event:ListEvent):void {
             startButton.enabled = modes.selectedIndex >= 0;
             if (!startButton.enabled) return;
-            var id:Number = modes.dataProvider[modes.selectedIndex].key;
-            minimap.setMinimapDataS(id, 1, NATIVE_PREVIEW_SIZE);
+            var id:Object = modes.dataProvider[modes.selectedIndex].key;
+            var isHangar:Boolean = rows[maps.selectedIndex].kind == 'hangar';
+            minimap.visible = !isHangar;
+            if (!isHangar) minimap.setMinimapDataS(Number(id), 1, NATIVE_PREVIEW_SIZE);
             modeSelected(id);
         }
         private function onStart(event:ButtonEvent):void { startViewing(); }

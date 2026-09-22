@@ -6,6 +6,7 @@ import GUI
 import Math
 import Keys
 import ArenaType
+from constants import AUTH_REALM
 from helpers import dependency
 from skeletons.gui.shared.utils import IHangarSpace
 from CurrentVehicle import g_currentVehicle
@@ -28,6 +29,7 @@ class LocalSession(object):
         self.flight = None
         self._cameraSpeed = 60.0
         self.arena = None
+        self.isHangar = False
         self.spaceID = None
         self._space = None
         self.mappingID = None
@@ -39,6 +41,9 @@ class LocalSession(object):
         self._cleanup = None
         self.lastReport = None
         self._hangarReleased = False
+        self._nativeHangar = False
+        self._nativePathChanged = False
+        self._nativeOverride = None
         self._restoreCallback = None
         self._loading = None
         self.stopping = False
@@ -56,13 +61,16 @@ class LocalSession(object):
     def start(self, arenaID):
         from . import bootstrap as ui
         from .cleanup import CleanupStack
+        from .catalog import HangarArena, isHangarKey
         if self.active or self.restoring:
             return
         hangar = dependency.instance(IHangarSpace)
         if not hangar.spaceInited or BigWorld.player().__class__.__name__ != 'PlayerAccount' or not g_currentVehicle.item:
             return
-        self.arena = ArenaType.g_cache[int(arenaID)]
-        self.arenaID = int(arenaID)
+        self.isHangar = isHangarKey(arenaID)
+        self._nativeHangar = self.isHangar and AUTH_REALM == 'EU'
+        self.arenaID = None if self.isHangar else int(arenaID)
+        self.arena = HangarArena(arenaID.split(':', 1)[1]) if self.isHangar else ArenaType.g_cache[self.arenaID]
         lobby = ui.findView('lobby')
         lobbyApp = ui.app()
         self._saved = dict(camera=BigWorld.camera(), fov=BigWorld.projection().fov,
@@ -76,12 +84,15 @@ class LocalSession(object):
         self._cleanup = CleanupStack()
         self._hudRequested = False
         self._hangarReleased = False
+        self._nativePathChanged = False
+        self._nativeOverride = None
         self._started = self._lastTick = BigWorld.time()
         self.active = True
         self.stopping = False
         self._restoreAllowed = True
         self.cursorControl = self.paused = False
-        self.minimapVisible = self.interfaceVisible = True
+        self.minimapVisible = not self.isHangar
+        self.interfaceVisible = True
         self._ctrlKeys.clear()
         self._showLoading(self._beginStart)
 
@@ -117,6 +128,80 @@ class LocalSession(object):
             self._loading = None
 
     def _beginStart(self):
+        if self._nativeHangar:
+            self._beginNativeHangar()
+        else:
+            self._openView()
+
+    def _beginNativeHangar(self):
+        from gui import ClientHangarSpace
+
+        if BigWorld.player() is not self._saved['account']:
+            self.stop()
+            return
+        try:
+            self._cleanup.defer('restore original hangar', self._restoreNativeHangar)
+            hangar = dependency.instance(IHangarSpace)
+            path = 'spaces/' + self.arena.geometryName
+            if hangar.spacePath != path:
+                self._ensureNativeHangarConfig(path)
+                # The EU hangar has its own camera, entities and CGF scripts.
+                # Mapping its geometry into a regular space crashes those scripts.
+                premium = hangar.isPremium
+                overrides = ClientHangarSpace._EVENT_HANGAR_PATHS
+                self._nativeOverride = (premium, overrides.get(premium))
+                self._nativePathChanged = True
+                self._hangarReleased = True
+                ClientHangarSpace.g_clientHangarSpaceOverride.setPath(path, isPremium=premium)
+                self._switchStarted = BigWorld.time()
+                self._callback = BigWorld.callback(0.1, self._waitSelectedHangar)
+            else:
+                self._openView()
+        except Exception:
+            log.exception('Native hangar switch failed')
+            self.stop()
+
+    def _ensureNativeHangarConfig(self, path):
+        from gui import ClientHangarSpace
+        from gui.hangar_config import HangarConfig
+        import ResMgr
+
+        key = path.lower()
+        if key in ClientHangarSpace._HANGAR_CFGS:
+            return
+        settings = ResMgr.openSection(path + '/space.settings/hangarSettings')
+        defaults = ResMgr.openSection('gui/hangars.xml')
+        if settings is None or defaults is None:
+            raise ValueError('Hangar configuration is unavailable: %s' % path)
+        config = HangarConfig()
+        config.loadDefaultHangarConfig(defaults, ClientHangarSpace._IGR_HANGAR_PATH_KEY)
+        config.loadConfig(settings)
+        ClientHangarSpace._loadVisualScript(config, settings)
+        for sectionName, loader in (('customizationHangarSettings', 'loadCustomizationConfig'),
+                                    ('secondaryHangarSettings', 'loadSecondaryConfig')):
+            section = settings[sectionName]
+            if section is not None:
+                extra = HangarConfig()
+                getattr(extra, loader)(section)
+                config[sectionName] = extra
+        ClientHangarSpace._HANGAR_CFGS[key] = config
+
+    def _waitSelectedHangar(self):
+        self._callback = None
+        if not self.active or self.stopping:
+            return
+        hangar = dependency.instance(IHangarSpace)
+        if BigWorld.player() is not self._saved['account']:
+            self.stop()
+        elif hangar.spaceInited and hangar.isModelLoaded and hangar.spacePath == 'spaces/' + self.arena.geometryName:
+            self._openView()
+        elif BigWorld.time() - self._switchStarted > 90:
+            log.error('Selected hangar did not become ready within 90 seconds')
+            self.stop()
+        else:
+            self._callback = BigWorld.callback(0.1, self._waitSelectedHangar)
+
+    def _openView(self):
         from . import bootstrap as ui
         from .battle_app import LocalBattleApp
         from .flight import FlightController
@@ -128,35 +213,42 @@ class LocalSession(object):
             self.stop()
             return
         try:
-            cleanup.defer('reload original hangar', self._restoreHangar)
+            if not self._nativeHangar:
+                cleanup.defer('reload original hangar', self._restoreHangar)
             cleanup.defer('restore lobby rendering', self._restoreLobby)
             lobby.getParentWindow().hide()
             lobbyApp.setVisible(False)
             lobbyApp.active(False)
             cleanup.defer('restore lobby optimizer', lobbyApp.graphicsOptimizationManager.switchOptimizationEnabled, self._saved['optimizer'])
             lobbyApp.graphicsOptimizationManager.switchOptimizationEnabled(False)
-            # Terrain/environment render state belongs to one active world.
-            # Use the stock hangar lifecycle before mapping a battle space.
-            self._hangarReleased = True
-            hangar.destroy()
-            # Default space is required for the battle terrain renderer. The
-            # True flag used by ClientHangarSpace produces missing terrain here.
-            # WoT returns a Space handle; MT returns its numeric ID directly.
-            self._space = BigWorld.createSpace()
-            self.spaceID = getattr(self._space, 'id', self._space)
-            cleanup.defer('release local space', BigWorld.releaseSpace, self.spaceID)
-            cleanup.defer('clear local space', BigWorld.clearSpace, self.spaceID)
-            flags = SpaceVisibilityFlagsFactory.create(self.arena.geometryName)
-            mask = flags.getMaskForGameplayID(self.arena.gameplayID)
+            if self._nativeHangar:
+                self.spaceID = hangar.spaceID
+                mask = hangar.visibilityMask
+            else:
+                # Battle terrain needs a regular space after releasing the
+                # native hangar. WoT returns a handle; MT returns an ID.
+                self._hangarReleased = True
+                hangar.destroy()
+                self._space = BigWorld.createSpace()
+                self.spaceID = getattr(self._space, 'id', self._space)
+                cleanup.defer('release local space', BigWorld.releaseSpace, self.spaceID)
+                cleanup.defer('clear local space', BigWorld.clearSpace, self.spaceID)
+            if self.isHangar and not self._nativeHangar:
+                from gui.ClientHangarSpace import getHangarFullVisibilityMask
+                mask = getHangarFullVisibilityMask('spaces/' + self.arena.geometryName)
+            elif not self.isHangar:
+                flags = SpaceVisibilityFlagsFactory.create(self.arena.geometryName)
+                mask = flags.getMaskForGameplayID(self.arena.gameplayID)
             self.visibilityMask = mask
-            self.mappingID = BigWorld.addSpaceGeometryMapping(self.spaceID, None, 'spaces/' + self.arena.geometryName, mask)
-            cleanup.defer('remove local geometry', BigWorld.delSpaceGeometryMapping, self.spaceID, self.mappingID)
+            if not self._nativeHangar:
+                self.mappingID = BigWorld.addSpaceGeometryMapping(self.spaceID, None, 'spaces/' + self.arena.geometryName, mask)
+                cleanup.defer('remove local geometry', BigWorld.delSpaceGeometryMapping, self.spaceID, self.mappingID)
             self.camera = BigWorld.FreeCamera()
             self.camera.spaceID = self.spaceID
             bl, tr = self.arena.boundingBox
             center = (bl + tr) * 0.5
-            self.flight = FlightController(self.camera, (center.x, 140.0, center.y - 250.0),
-                                           self._cameraSpeed)
+            position = self.arena.startPosition if self.isHangar else (center.x, 140.0, center.y - 250.0)
+            self.flight = FlightController(self.camera, position, self._cameraSpeed)
             cleanup.defer('restore hangar camera', self._restoreCamera)
             BigWorld.camera(self.camera)
             cleanup.defer('restore shadow camera mode', BigWorld.enableFreeCameraModeForShadowManager, False)
@@ -200,6 +292,28 @@ class LocalSession(object):
                 self.restoring = False
                 raise
 
+    def _restoreNativeHangar(self):
+        if not self._nativePathChanged or not self._restoreAllowed or BigWorld.player() is not self._saved['account']:
+            return
+        from gui import ClientHangarSpace
+
+        premium, original = self._nativeOverride
+        overrides = ClientHangarSpace._EVENT_HANGAR_PATHS
+        if original is None:
+            overrides.pop(premium, None)
+        else:
+            overrides[premium] = original
+        self.restoring = True
+        self._restoreStarted = BigWorld.time()
+        hangar = dependency.instance(IHangarSpace)
+        try:
+            hangar.refreshSpace(self._saved['premium'], True)
+            hangar.onSpaceChanged()
+            self._restoreCallback = BigWorld.callback(0.1, self._waitHangar)
+        except Exception:
+            self.restoring = False
+            raise
+
     def _waitHangar(self):
         self._restoreCallback = None
         hangar = dependency.instance(IHangarSpace)
@@ -236,13 +350,14 @@ class LocalSession(object):
         if self._eventContext is None and self.active and not self.stopping:
             from .dynamic_events import DynamicEvents
             from .bootstrap import MINIMAP
-            self.dynamicEvents = DynamicEvents(self.spaceID, self.arena, self.hud.getComponent(MINIMAP))
-            self._cleanup.defer('stop dynamic events', self._stopDynamicEvents)
-            try:
-                self.dynamicEvents.start()
-            except Exception:
-                log.exception('Dynamic event initialization failed')
-                self._stopDynamicEvents()
+            if not self.isHangar:
+                self.dynamicEvents = DynamicEvents(self.spaceID, self.arena, self.hud.getComponent(MINIMAP))
+                self._cleanup.defer('stop dynamic events', self._stopDynamicEvents)
+                try:
+                    self.dynamicEvents.start()
+                except Exception:
+                    log.exception('Dynamic event initialization failed')
+                    self._stopDynamicEvents()
             from . import events
             self._eventContext = events.ViewerContext(self.spaceID, self.arenaID,
                 self.arena.geometryName, self.arena.gameplayID, self.visibilityMask)
@@ -291,9 +406,10 @@ class LocalSession(object):
                 BigWorld.worldDrawEnabled(True)
             if not self._hudRequested and BigWorld.spaceLoadStatus() >= 0.99 and BigWorld.virtualTextureRenderComplete() and self.battleApp.initialized:
                 from .border import LocalArenaBorder
-                self.border = LocalArenaBorder()
-                self._cleanup.defer('release arena border', self.border.stopControl)
-                self.border.attach(self.spaceID, self.arena.boundingBox)
+                if not self.isHangar:
+                    self.border = LocalArenaBorder()
+                    self._cleanup.defer('release arena border', self.border.stopControl)
+                    self.border.attach(self.spaceID, self.arena.boundingBox)
                 self._hudRequested = True
                 self.battleApp.loadView(SFViewLoadParams(ui.HUD))
             if self.hud is None and now - self._started > 90:

@@ -8,6 +8,9 @@ from .minimap_bounds import getMinimapBounds
 
 class LocalPreview(MinimapLobby):
     def setArena(self, arenaID):
+        from .catalog import isHangarKey
+        if isHangarKey(arenaID):
+            return
         arena = ArenaType.g_cache[int(arenaID)]
         paths = ['gui/maps/icons/map/%s/%s.png' % (arena.gameplayName, arena.geometryName),
                  'gui/maps/icons/map/%s.png' % arena.geometryName,

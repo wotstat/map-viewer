@@ -15,6 +15,13 @@ _EVENT_LABELS = {
     'hu': (u'Dinamikus események', u'%d. esemény: %s', u'Lejátszás / ismétlés', u'Szünet'),
 }
 
+_HANGAR_LABELS = {
+    'en': u'Hangar', 'ru': u'Ангар', 'pl': u'Garaż',
+    'de': u'Garage', 'cs': u'Garáž', 'uk': u'Ангар',
+    'fr': u'Garage', 'es': u'Garaje', 'it': u'Officina',
+    'tr': u'Garaj', 'hu': u'Garázs',
+}
+
 _LABELS = {
     'en': dict(
         title=u'Local map viewer', description=u'Explore maps with a free camera, without entering a battle. F8.',
@@ -93,6 +100,7 @@ def texts(language=None):
     result = dict(_LABELS.get(language, _LABELS['en']))
     result.update(zip(('dynamicEvents', 'dynamicEventName', 'eventPlay', 'eventPause'),
                       _EVENT_LABELS.get(language, _EVENT_LABELS['en'])))
+    result['hangar'] = _HANGAR_LABELS.get(language, _HANGAR_LABELS['en'])
     return result
 
 

@@ -22,6 +22,46 @@ _HANGAR_LABELS = {
     'tr': u'Garaj', 'hu': u'Garázs',
 }
 
+_SCENE_KEYS = ('hangarScenes', 'hangarScene', 'hangarScene_default',
+               'hangarScene_customization', 'hangarScene_overview',
+               'hangarScene_armor', 'hangarScene_victory', 'hangarScene_defeat',
+               'hangarScene_missions', 'hangarScene_pet')
+_SCENE_LABELS = {
+    'en': (u'Hangar scenes', u'Scene', u'Standard', u'Customization',
+           u'Vehicle overview', u'Armor inspection', u'After battle: victory',
+           u'After battle: defeat', u'Personal missions', u'Pet den'),
+    'ru': (u'Сцены ангара', u'Сцена', u'Обычный', u'Кастомизация',
+           u'Обзор техники', u'Осмотр брони', u'После боя: победа',
+           u'После боя: поражение', u'Личные задачи', u'Питомник'),
+    'pl': (u'Sceny garażu', u'Scena', u'Standardowy', u'Personalizacja',
+           u'Przegląd pojazdu', u'Inspekcja pancerza', u'Po bitwie: zwycięstwo',
+           u'Po bitwie: porażka', u'Misje osobiste', u'Legowisko pupila'),
+    'de': (u'Garagenszenen', u'Szene', u'Standard', u'Anpassung',
+           u'Fahrzeugübersicht', u'Panzerungsprüfung', u'Nach dem Gefecht: Sieg',
+           u'Nach dem Gefecht: Niederlage', u'Persönliche Aufträge', u'Tierunterkunft'),
+    'cs': (u'Scény garáže', u'Scéna', u'Výchozí', u'Úpravy',
+           u'Přehled vozidla', u'Kontrola pancíře', u'Po bitvě: vítězství',
+           u'Po bitvě: porážka', u'Osobní mise', u'Pelíšek'),
+    'uk': (u'Сцени ангара', u'Сцена', u'Звичайний', u'Персоналізація',
+           u'Огляд техніки', u'Огляд броні', u'Після бою: перемога',
+           u'Після бою: поразка', u'Особисті завдання', u'Лігво улюбленця'),
+    'fr': (u'Scènes du garage', u'Scène', u'Standard', u'Personnalisation',
+           u'Vue du véhicule', u'Inspection du blindage', u'Après la bataille : victoire',
+           u'Après la bataille : défaite', u'Missions personnelles', u'Repaire de l’animal'),
+    'es': (u'Escenas del garaje', u'Escena', u'Normal', u'Personalización',
+           u'Vista del vehículo', u'Inspección del blindaje', u'Tras la batalla: victoria',
+           u'Tras la batalla: derrota', u'Misiones personales', u'Guarida de la mascota'),
+    'it': (u'Scene dell’officina', u'Scena', u'Standard', u'Personalizzazione',
+           u'Panoramica del veicolo', u'Ispezione corazzatura', u'Dopo la battaglia: vittoria',
+           u'Dopo la battaglia: sconfitta', u'Missioni personali', u'Tana dell’animale'),
+    'tr': (u'Garaj sahneleri', u'Sahne', u'Varsayılan', u'Özelleştirme',
+           u'Araç görünümü', u'Zırh incelemesi', u'Savaş sonrası: zafer',
+           u'Savaş sonrası: yenilgi', u'Kişisel görevler', u'Evcil hayvan yuvası'),
+    'hu': (u'Garázsjelenetek', u'Jelenet', u'Alapértelmezett', u'Testreszabás',
+           u'Járműáttekintés', u'Páncélvizsgálat', u'Csata után: győzelem',
+           u'Csata után: vereség', u'Személyes küldetések', u'Kisállat kuckója'),
+}
+
 _LABELS = {
     'en': dict(
         title=u'Local map viewer', description=u'Explore maps with a free camera, without entering a battle. F8.',
@@ -101,6 +141,7 @@ def texts(language=None):
     result.update(zip(('dynamicEvents', 'dynamicEventName', 'eventPlay', 'eventPause'),
                       _EVENT_LABELS.get(language, _EVENT_LABELS['en'])))
     result['hangar'] = _HANGAR_LABELS.get(language, _HANGAR_LABELS['en'])
+    result.update(zip(_SCENE_KEYS, _SCENE_LABELS.get(language, _SCENE_LABELS['en'])))
     return result
 
 

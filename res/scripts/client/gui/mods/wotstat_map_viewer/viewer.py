@@ -57,6 +57,7 @@ class LocalSession(object):
         self._eventContext = None
         self.visibilityMask = None
         self.dynamicEvents = None
+        self.hangarScenes = None
 
     def start(self, arenaID):
         from . import bootstrap as ui
@@ -358,6 +359,15 @@ class LocalSession(object):
                 except Exception:
                     log.exception('Dynamic event initialization failed')
                     self._stopDynamicEvents()
+            elif self._nativeHangar:
+                from .hangar_scenes import HangarScenes
+                self.hangarScenes = HangarScenes(self.spaceID, self.arena.geometryName, self._saved['app'])
+                self._cleanup.defer('stop hangar scenes', self._stopHangarScenes)
+                try:
+                    self.hangarScenes.start()
+                except Exception:
+                    log.exception('Hangar scene initialization failed')
+                    self._stopHangarScenes()
             from . import events
             self._eventContext = events.ViewerContext(self.spaceID, self.arenaID,
                 self.arena.geometryName, self.arena.gameplayID, self.visibilityMask)
@@ -365,6 +375,11 @@ class LocalSession(object):
 
     def _stopDynamicEvents(self):
         controller, self.dynamicEvents = self.dynamicEvents, None
+        if controller is not None:
+            controller.stop()
+
+    def _stopHangarScenes(self):
+        controller, self.hangarScenes = self.hangarScenes, None
         if controller is not None:
             controller.stop()
 

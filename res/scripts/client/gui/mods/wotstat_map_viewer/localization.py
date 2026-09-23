@@ -22,6 +22,20 @@ _HANGAR_LABELS = {
   'tr': u'Garaj', 'hu': u'Garázs',
 }
 
+_MODE_LABELS = {
+  'en': (u'Event', u'Waffenträger'),
+  'ru': (u'Событие', u'Ваффентрагер'),
+  'pl': (u'Wydarzenie', u'Waffenträger'),
+  'de': (u'Event', u'Waffenträger'),
+  'cs': (u'Událost', u'Waffenträger'),
+  'uk': (u'Подія', u'Ваффентрагер'),
+  'fr': (u'Événement', u'Waffenträger'),
+  'es': (u'Evento', u'Waffenträger'),
+  'it': (u'Evento', u'Waffenträger'),
+  'tr': (u'Etkinlik', u'Waffenträger'),
+  'hu': (u'Esemény', u'Waffenträger'),
+}
+
 _SCENE_KEYS = ('hangarScenes', 'hangarScene', 'hangarScene_default',
         'hangarScene_customization', 'hangarScene_overview',
         'hangarScene_armor', 'hangarScene_victory', 'hangarScene_defeat',
@@ -137,9 +151,16 @@ def texts(language=None):
     language = getClientLanguage()
   language = (language or '').lower().replace('_', '-').split('-')[0]
   result = dict(_LABELS.get(language, _LABELS['en']))
+  loginLabels = {
+    'ru': (u'НА ЭКРАН ВХОДА', u'Выйти на экран входа'),
+    'en': (u'TO LOGIN SCREEN', u'Exit to login screen'),
+  }
+  result['toLogin'], result['exitToLogin'] = loginLabels.get(language, loginLabels['en'])
   result.update(zip(('dynamicEvents', 'dynamicEventName', 'eventPlay', 'eventPause'),
            _EVENT_LABELS.get(language, _EVENT_LABELS['en'])))
   result['hangar'] = _HANGAR_LABELS.get(language, _HANGAR_LABELS['en'])
+  result.update(zip(('eventMode', 'waffentragerMode'),
+           _MODE_LABELS.get(language, _MODE_LABELS['en'])))
   result.update(zip(_SCENE_KEYS, _SCENE_LABELS.get(language, _SCENE_LABELS['en'])))
   return result
 

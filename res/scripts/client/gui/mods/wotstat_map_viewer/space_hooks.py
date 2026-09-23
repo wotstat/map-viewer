@@ -27,8 +27,19 @@ def install(session):
         spaceID = session.spaceID
       return CGF.GameObject(spaceID, *args)
 
+  class ZoneBigWorld(object):
+
+    def __getattr__(self, name):
+      return getattr(BigWorld, name)
+
+    def player(self):
+      player = BigWorld.player()
+      if player is None and session.active and session.spaceID is not None:
+        return type('SpacePlayer', (object,), {'spaceID': session.spaceID})()
+      return player
+
   function = original.im_func
-  localGlobals = dict(function.func_globals, CGF=ZoneCGF())
+  localGlobals = dict(function.func_globals, CGF=ZoneCGF(), BigWorld=ZoneBigWorld())
   scoped = FunctionType(function.func_code, localGlobals, function.func_name,
              function.func_defaults, function.func_closure)
 

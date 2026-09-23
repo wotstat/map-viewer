@@ -1,8 +1,10 @@
 package wotstat.mapviewer {
+  import flash.display.Sprite;
   import flash.text.TextField;
   import flash.text.TextFormat;
   import net.wg.infrastructure.base.AbstractWindowView;
   import net.wg.gui.components.controls.DropdownMenu;
+  import net.wg.gui.components.controls.UILoaderAlt;
   import scaleform.clik.controls.ScrollingList;
   import net.wg.gui.components.controls.SoundButtonEx;
   import net.wg.gui.components.minimap.MinimapPresentation;
@@ -22,6 +24,7 @@ package wotstat.mapviewer {
     public var closeButton:SoundButtonEx;
     private var rows:Array = [];
     private var mapLabel:TextField;
+    private var generatorPreview:Sprite;
     private static const CONTENT_W:int = 640;
     private static const CONTENT_H:int = 442;
     private static const PREVIEW_SIZE:int = 340;
@@ -75,6 +78,12 @@ package wotstat.mapviewer {
       // The stock presentation removes its own listener after the first
       // image. Refit every subsequent texture to the same grid and frame.
       minimap.map.addEventListener(UILoaderEvent.COMPLETE, onPreviewLoaded);
+      generatorPreview = new Sprite();
+      generatorPreview.x = minimap.x;
+      generatorPreview.y = minimap.y;
+      generatorPreview.scaleX = generatorPreview.scaleY = minimap.scaleX;
+      generatorPreview.mouseEnabled = generatorPreview.mouseChildren = false;
+      addChild(generatorPreview);
       startButton = makeButton('', CONTENT_W - 104 - 10 - 180, 180);
       closeButton = makeButton('', CONTENT_W - 104, 104);
       startButton.enabled = false;
@@ -99,6 +108,28 @@ package wotstat.mapviewer {
       // AbstractView normally reveals its contents on the next frame.
       // The controls are ready now, so show them with the native frame.
       visible = true;
+    }
+
+    public function as_setPreviewGenerators(points:Array):void {
+      clearGeneratorPreview();
+      for each (var point:Array in points) {
+        var icon:UILoaderAlt = new UILoaderAlt();
+        icon.autoSize = true;
+        icon.setOriginalWidth(38);
+        icon.setOriginalHeight(38);
+        icon.source = 'img://white_tiger/gui/maps/icons/battleHints/wtGeneratorSpawned.png';
+        icon.x = 150 + Number(point[0]) - 19;
+        icon.y = 150 - Number(point[1]) - 19;
+        generatorPreview.addChild(icon);
+      }
+    }
+
+    private function clearGeneratorPreview():void {
+      if (generatorPreview == null) return;
+      while (generatorPreview.numChildren) {
+        var icon:UILoaderAlt = generatorPreview.removeChildAt(0) as UILoaderAlt;
+        if (icon != null) icon.dispose();
+      }
     }
 
     private function makeLabel(text:String, left:int, top:int, w:int, size:int):TextField {
@@ -142,6 +173,7 @@ package wotstat.mapviewer {
       var id:Object = modes.dataProvider[modes.selectedIndex].key;
       var isHangar:Boolean = rows[maps.selectedIndex].kind == 'hangar';
       minimap.visible = !isHangar;
+      generatorPreview.visible = !isHangar;
       if (!isHangar) minimap.setMinimapDataS(Number(id), 1, NATIVE_PREVIEW_SIZE);
       modeSelected(id);
     }
@@ -169,6 +201,8 @@ package wotstat.mapviewer {
     }
 
     override protected function onDispose():void {
+      clearGeneratorPreview();
+      generatorPreview = null;
       maps.dispose();
       maps = null;
       modes.dispose();

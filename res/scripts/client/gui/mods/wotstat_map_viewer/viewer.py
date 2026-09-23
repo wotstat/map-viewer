@@ -31,6 +31,7 @@ class LocalSession(object):
     self._cameraSpeed = 60.0
     self.arena = None
     self.isHangar = False
+    self._fromLogin = False
     self.spaceID = None
     self._space = None
     self.mappingID = None
@@ -58,6 +59,7 @@ class LocalSession(object):
     self._eventContext = None
     self.visibilityMask = None
     self.dynamicEvents = None
+    self.poiVisuals = None
     self.hangarScenes = None
 
   def start(self, arenaID):
@@ -68,25 +70,31 @@ class LocalSession(object):
     if self.active or self.restoring: return
 
     hangar = dependency.instance(IHangarSpace)
-    if (not hangar.spaceInited
-        or BigWorld.player().__class__.__name__ != 'PlayerAccount'
-        or not g_currentVehicle.item):
+    login = ui.findView('login')
+    self._fromLogin = login is not None and not login.isDisposed()
+    if (not self._fromLogin and
+        (not hangar.spaceInited
+         or BigWorld.player().__class__.__name__ != 'PlayerAccount'
+         or not g_currentVehicle.item)):
       return
 
     self.isHangar = isHangarKey(arenaID)
+    if self._fromLogin and self.isHangar:
+      return
     self._nativeHangar = self.isHangar and AUTH_REALM == 'EU'
     self.arenaID = None if self.isHangar else int(arenaID)
     self.arena = HangarArena(arenaID.split(':', 1)[1]) if self.isHangar else ArenaType.g_cache[self.arenaID]
-    lobby = ui.findView('lobby')
+    lobby = login if self._fromLogin else ui.findView('lobby')
     lobbyApp = ui.app()
     self._saved = dict(camera=BigWorld.camera(), fov=BigWorld.projection().fov,
               cursorVisible=GUI.mcursor().visible, cursorClipped=GUI.mcursor().clipped,
-              spaceID=hangar.spaceID, vehicleCD=g_currentVehicle.item.intCD,
-              path=hangar.spacePath, environment=getattr(hangar, 'environment', None),
-              mask=hangar.visibilityMask, premium=hangar._HangarSpace__isSpacePremium,
               account=BigWorld.player(), lobby=lobby, app=lobbyApp,
               appActive=lobbyApp.isActive, cursorMode=lobbyApp.ctrlModeFlags,
               optimizer=lobbyApp.graphicsOptimizationManager.getEnable())
+    if not self._fromLogin:
+      self._saved.update(spaceID=hangar.spaceID, vehicleCD=g_currentVehicle.item.intCD,
+                path=hangar.spacePath, environment=getattr(hangar, 'environment', None),
+                mask=hangar.visibilityMask, premium=hangar._HangarSpace__isSpacePremium)
 
     self._cleanup = CleanupStack()
     self._hudRequested = False
@@ -227,10 +235,11 @@ class LocalSession(object):
       return
 
     try:
-      if not self._nativeHangar:
+      if not self._nativeHangar and not self._fromLogin:
         cleanup.defer('reload original hangar', self._restoreHangar)
       cleanup.defer('restore lobby rendering', self._restoreLobby)
-      lobby.getParentWindow().hide()
+      if lobby is not None and lobby.getParentWindow() is not None:
+        lobby.getParentWindow().hide()
       lobbyApp.setVisible(False)
       lobbyApp.active(False)
       cleanup.defer(
@@ -245,8 +254,9 @@ class LocalSession(object):
       else:
         # Battle terrain needs a regular space after releasing the
         # native hangar. WoT returns a handle; MT returns an ID.
-        self._hangarReleased = True
-        hangar.destroy()
+        if not self._fromLogin:
+          self._hangarReleased = True
+          hangar.destroy()
         self._space = BigWorld.createSpace()
         self.spaceID = getattr(self._space, 'id', self._space)
         cleanup.defer('release local space', BigWorld.releaseSpace, self.spaceID)
@@ -302,6 +312,10 @@ class LocalSession(object):
       self.stop()
 
   def _restoreCamera(self):
+    if self._fromLogin:
+      if BigWorld.camera() is self.camera and self._saved['camera'] is not None:
+        BigWorld.camera(self._saved['camera'])
+      return
     if not self._hangarReleased and dependency.instance(IHangarSpace).spaceID == self._saved['spaceID']:
       BigWorld.camera(self._saved['camera'])
     elif BigWorld.camera() is self.camera:
@@ -358,13 +372,20 @@ class LocalSession(object):
 
   def _finishReturn(self, ready):
     saved = self._saved
-    hangar = dependency.instance(IHangarSpace)
-    self.lastReport.update(hangarReady=ready,
-      sameAccount=BigWorld.player() is saved['account'],
-      sameHangar=hangar.spacePath == saved['path'],
-      sameEnvironment=getattr(hangar, 'environment', None) == saved['environment'],
-      sameVisibility=hangar.visibilityMask == saved['mask'],
-      sameVehicle=bool(g_currentVehicle.item and g_currentVehicle.item.intCD == saved['vehicleCD']))
+    if self._fromLogin:
+      if self._restoreAllowed and saved['lobby'] and not saved['lobby'].isDisposed():
+        from gui.game_loading import loading
+        loading.getLoader().loginScreen()
+      self.lastReport.update(loginReady=ready,
+        sameAccount=BigWorld.player() is saved['account'])
+    else:
+      hangar = dependency.instance(IHangarSpace)
+      self.lastReport.update(hangarReady=ready,
+        sameAccount=BigWorld.player() is saved['account'],
+        sameHangar=hangar.spacePath == saved['path'],
+        sameEnvironment=getattr(hangar, 'environment', None) == saved['environment'],
+        sameVisibility=hangar.visibilityMask == saved['mask'],
+        sameVehicle=bool(g_currentVehicle.item and g_currentVehicle.item.intCD == saved['vehicleCD']))
     self.restoring = False
     self._hideLoading()
     self._saved = None
@@ -379,6 +400,14 @@ class LocalSession(object):
       from .dynamic_events import DynamicEvents
       from .bootstrap import MINIMAP
       if not self.isHangar:
+        from .poi_visuals import PoiVisuals
+        self.poiVisuals = PoiVisuals(self.spaceID, self.arena)
+        self._cleanup.defer('stop POI visuals', self._stopPoiVisuals)
+        try:
+          self.poiVisuals.start()
+        except Exception:
+          log.exception('POI visual initialization failed')
+          self._stopPoiVisuals()
         self.dynamicEvents = DynamicEvents(self.spaceID, self.arena, self.hud.getComponent(MINIMAP))
         self._cleanup.defer('stop dynamic events', self._stopDynamicEvents)
         try:
@@ -405,6 +434,11 @@ class LocalSession(object):
     if controller is not None:
       controller.stop()
 
+  def _stopPoiVisuals(self):
+    controller, self.poiVisuals = self.poiVisuals, None
+    if controller is not None:
+      controller.stop()
+
   def _stopHangarScenes(self):
     controller, self.hangarScenes = self.hangarScenes, None
     if controller is not None:
@@ -415,7 +449,9 @@ class LocalSession(object):
       return
     saved = self._saved
     if saved['lobby'] and not saved['lobby'].isDisposed():
-      saved['lobby'].getParentWindow().show()
+      window = saved['lobby'].getParentWindow()
+      if window is not None:
+        window.show()
     if saved['app'].component is not None:
       saved['app'].active(saved['appActive'])
       saved['app'].setVisible(True)
@@ -454,7 +490,7 @@ class LocalSession(object):
           and BigWorld.virtualTextureRenderComplete()
           and self.battleApp.initialized):
         from .border import LocalArenaBorder
-        if not self.isHangar:
+        if not self.isHangar and not self._fromLogin:
           self.border = LocalArenaBorder()
           self._cleanup.defer('release arena border', self.border.stopControl)
           self.border.attach(self.spaceID, self.arena.boundingBox)
@@ -657,8 +693,11 @@ class LocalMinimap(MinimapMeta):
     self.as_setBackgroundS('img://' + arena.minimap if arena.minimap and ResMgr.isFile(arena.minimap) else '')
 
     from .minimap_points import iterTeamPoints
-    from gui.Scaleform.daapi.view.battle.shared.points_of_interest.constants import POI_TYPE_UI_MAPPING
-    from gui.Scaleform.genConsts.POI_CONSTS import POI_CONSTS
+    from .catalog import isWaffentragerArena
+    whiteTiger = isWaffentragerArena(arena)
+    if not whiteTiger:
+      from gui.Scaleform.daapi.view.battle.shared.points_of_interest.constants import POI_TYPE_UI_MAPPING
+      from gui.Scaleform.genConsts.POI_CONSTS import POI_CONSTS
     for symbol, position, number in iterTeamPoints(
         arena.teamBasePositions, arena.teamSpawnPoints, arena.controlPoints):
       entry = self.addPoint(symbol, position)
@@ -666,11 +705,17 @@ class LocalMinimap(MinimapMeta):
       if symbol not in ('AllyTeamSpawnEntry', 'EnemyTeamSpawnEntry'):
         self.native.entryInvoke(entry, ('setState', 'default'))
 
-    for point in arena.pointsOfInterest or ():
-      entry = self.addPoint('PoiMinimapEntry', point['position'])
-      self.native.entryInvoke(entry, ('setType', POI_TYPE_UI_MAPPING[point['type']]))
-      self.native.entryInvoke(entry, ('setStatus', POI_CONSTS.POI_STATUS_ACTIVE))
-      self.native.entryInvoke(entry, ('setIsAlly', False))
+    for index, point in enumerate(arena.pointsOfInterest or (), 1):
+      if whiteTiger:
+        entry = self.addPoint('PoiMinimapEntry', point['position'])
+      else:
+        entry = self.addPoint('PoiMinimapEntry', point['position'])
+        self.native.entryInvoke(entry, ('setType', POI_TYPE_UI_MAPPING[point['type']]))
+        self.native.entryInvoke(entry, ('setStatus', POI_CONSTS.POI_STATUS_ACTIVE))
+        self.native.entryInvoke(entry, ('setIsAlly', False))
+
+    if whiteTiger:
+      ui.session.hud.flashObject.as_setGeneratorIcons()
 
     entry = self.native.addEntry(
       'VideoCameraEntry', 'personal', ui.session.camera.invViewMatrix,
@@ -745,7 +790,9 @@ class LocalMenu(IngameMenu):
     self.cancelClick()
 
   def _setMenuButtonsLabels(self):
-    self.as_setMenuButtonsLabelsS('', text('settings'), text('resume'), text('exitToHangar'))
+    from .bootstrap import session
+    exitLabel = 'exitToLogin' if session._fromLogin else 'exitToHangar'
+    self.as_setMenuButtonsLabelsS('', text('settings'), text('resume'), text(exitLabel))
 
   def _setMenuButtons(self):
     from gui.Scaleform.genConsts.INGAMEMENU_CONSTANTS import INGAMEMENU_CONSTANTS as buttons

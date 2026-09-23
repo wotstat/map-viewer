@@ -3,17 +3,19 @@ package wotstat.mapviewer {
   import net.wg.infrastructure.base.AbstractView;
   import net.wg.infrastructure.events.LibraryLoaderEvent;
 
-  // Persistent lobby lifecycle hook; no selector controls live here.
+  // Keep the selector's stock controls available at both login and lobby.
   public class MapBridge extends AbstractView {
     public var ready:Function;
     public var loadingFailed:Function;
     private var notified:Boolean = false;
+    private var controls:NativeControls;
 
     override protected function onPopulate():void {
       super.onPopulate();
       mouseEnabled = mouseChildren = false;
+      controls = new NativeControls(onControlsReady, onControlsFailed);
       if (ApplicationDomain.currentDomain.hasDefinition('LobbyMinimap')) {
-        notifyReady();
+        loadControls();
       } else {
         App.instance.loaderMgr.addEventListener(LibraryLoaderEvent.LOADED_COMPLETED, onLibrariesLoaded);
         App.instance.loaderMgr.addEventListener(LibraryLoaderEvent.LOADING_FAILED, onLoadingFailed);
@@ -22,7 +24,20 @@ package wotstat.mapviewer {
     }
 
     private function onLibrariesLoaded(event:LibraryLoaderEvent):void {
-      if (ApplicationDomain.currentDomain.hasDefinition('LobbyMinimap')) notifyReady();
+      if (ApplicationDomain.currentDomain.hasDefinition('LobbyMinimap')) loadControls();
+    }
+
+    private function loadControls():void {
+      removeLibraryListeners();
+      controls.load();
+    }
+
+    private function onControlsReady():void {
+      notifyReady();
+    }
+
+    private function onControlsFailed(message:String):void {
+      loadingFailed();
     }
 
     private function onLoadingFailed(event:LibraryLoaderEvent):void {
@@ -46,6 +61,8 @@ package wotstat.mapviewer {
 
     override protected function onDispose():void {
       removeLibraryListeners();
+      if (controls != null) controls.dispose();
+      controls = null;
       ready = loadingFailed = null;
       super.onDispose();
     }

@@ -7,6 +7,30 @@ def displayName(value, fallback):
     return fallback
   return value
 
+def isWaffentragerArena(arena):
+  if not arena.geometryName.endswith('_wt'):
+    return False
+  import ResMgr
+  section = ResMgr.openSection('scripts/arena_defs/%s.xml' % arena.geometryName)
+  return section is not None and section.readString('name').startswith('#white_tiger.')
+
+def modeLabel(arena):
+  from helpers import i18n
+  from .localization import text
+
+  if isWaffentragerArena(arena):
+    title = i18n.makeString('#white_tiger.white_tiger:detailsHelp/mainTitle')
+    if title and not title.startswith(('#', 'detailsHelp/')):
+      return title
+    return text('waffentragerMode')
+  if (arena.gameplayName == 'ctf' and getattr(arena, 'explicitRequestOnly', False)
+      and (arena.pointsOfInterest or
+           (not any(arena.teamBasePositions or ()) and
+            not any(arena.teamSpawnPoints or ())))):
+    return text('eventMode')
+  return displayName(i18n.makeString('#arenas:type/%s/name' % arena.gameplayName),
+            arena.gameplayName)
+
 def groupArenas(records):
   groups = {}
   for record in records:
@@ -81,18 +105,16 @@ class HangarArena(object):
     self.pointsOfInterest = ()
     self.minimapLayers = {}
 
-def loadCatalog():
+def loadCatalog(includeHangars=True):
   import ArenaType
   import ResMgr
   from constants import AUTH_REALM
-  from helpers import i18n
 
   records = []
   for arenaID, arena in ArenaType.g_cache.iteritems():
     if ResMgr.openSection('spaces/' + arena.geometryName + '/space.settings') is None: continue
 
-    label = i18n.makeString('#arenas:type/%s/name' % arena.gameplayName)
-    label = displayName(label, arena.gameplayName)
+    label = modeLabel(arena)
     records.append(dict(key=arenaID, geometry=arena.geometryName,
               dynamicEvents=(AUTH_REALM == 'EU' and
                       not arena.geometryName.endswith(('_sm24', '_sm25')) and
@@ -102,4 +124,4 @@ def loadCatalog():
               time=arena.roundLength / 60, description='',
               icon='../maps/icons/map/%s.png' % arena.geometryName))
 
-  return groupArenas(records) + loadHangars()
+  return groupArenas(records) + (loadHangars() if includeHangars else [])

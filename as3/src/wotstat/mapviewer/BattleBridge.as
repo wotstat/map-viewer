@@ -1,5 +1,6 @@
 package wotstat.mapviewer {
   import flash.display.DisplayObject;
+  import flash.display.DisplayObjectContainer;
   import flash.display.GradientType;
   import flash.display.Shape;
   import flash.events.Event;
@@ -9,6 +10,8 @@ package wotstat.mapviewer {
   import net.wg.app.iml.base.StageResizeEvent;
   import net.wg.infrastructure.base.AbstractView;
   import net.wg.gui.battle.views.minimap.Minimap;
+  import net.wg.gui.battle.views.minimap.components.entries.pointsOfInterest.PoiMinimapEntry;
+  import net.wg.gui.components.controls.UILoaderAlt;
   import scaleform.clik.events.ButtonEvent;
 
   public class BattleBridge extends AbstractView {
@@ -81,6 +84,22 @@ package wotstat.mapviewer {
       as_setSections(sections);
       layoutMinimap();
       as_setInteractive(false);
+    }
+
+    public function as_setGeneratorIcons():void {
+      var points:DisplayObjectContainer = minimap.entriesContainer.points;
+      for (var i:int = 0; i < points.numChildren; ++i) {
+        var entry:PoiMinimapEntry = points.getChildAt(i) as PoiMinimapEntry;
+        if (entry == null) continue;
+        entry.marker.visible = false;
+        var icon:UILoaderAlt = new UILoaderAlt();
+        icon.autoSize = true;
+        icon.setOriginalWidth(30);
+        icon.setOriginalHeight(30);
+        icon.source = 'img://white_tiger/gui/maps/icons/battleHints/wtGeneratorSpawned.png';
+        icon.x = icon.y = -15;
+        entry.addChild(icon);
+      }
     }
 
     public function as_setSections(sections:Array):void {

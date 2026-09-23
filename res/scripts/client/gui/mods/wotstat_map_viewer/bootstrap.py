@@ -11,7 +11,7 @@ from gui.Scaleform.framework import g_entitiesFactories, ScopeTemplates, ViewSet
 from gui.Scaleform.framework.managers.loaders import SFViewLoadParams
 from gui.Scaleform.framework.entities.View import View, ViewKey
 from gui.Scaleform.framework.entities.abstract.AbstractWindowView import AbstractWindowView
-from .catalog import loadCatalog
+from .catalog import loadCatalog, modeLabel
 from .localization import text, texts
 
 log = logging.getLogger('WOTSTAT_MAP_VIEWER')
@@ -39,9 +39,11 @@ def findView(alias):
 def showSelector():
   if session and (session.active or session.restoring): return
 
-  hangar = dependency.instance(IHangarSpace)
-  if not hangar.spaceInited or BigWorld.player().__class__.__name__ != 'PlayerAccount':
-    return
+  login = findView('login')
+  if login is None or login.isDisposed():
+    hangar = dependency.instance(IHangarSpace)
+    if not hangar.spaceInited or BigWorld.player().__class__.__name__ != 'PlayerAccount':
+      return
 
   if not bridge:
     app().loadView(SFViewLoadParams(BRIDGE))
@@ -52,7 +54,7 @@ class Selector(AbstractWindowView):
 
   def __init__(self, ctx=None):
     super(Selector, self).__init__()
-    self.rows = loadCatalog()
+    self.rows = loadCatalog(includeHangars=findView('login') is None)
     self.selected = self.rows[0]['key'] if self.rows else None
 
   def _populate(self):
@@ -109,25 +111,29 @@ class BattleBridge(View):
   def minimapReady(self, path):
     if session.active and not session.stopping and self.app == session.battleApp.proxy:
       try:
-        self.getComponent(MINIMAP).attach(path, session.arena)
         session.hud = self
+        self.getComponent(MINIMAP).attach(path, session.arena)
 
         from .debug_panel import g_registry
         from .catalog import displayName
-        from helpers import i18n
         arena = session.arena
-        mode = text('hangar') if session.isHangar else displayName(
-          i18n.makeString('#arenas:type/%s/name' % arena.gameplayName), arena.gameplayName)
+        mode = text('hangar') if session.isHangar else modeLabel(arena)
 
+        labels = texts()
+        if session._fromLogin:
+          labels['toHangar'] = labels['toLogin']
         self.flashObject.as_setViewerData(
           displayName(arena.name, arena.geometryName), mode,
-          g_registry.snapshot(), texts())
+          g_registry.snapshot(), labels)
         self.flashObject.as_setVisibility(session.interfaceVisible, session.minimapVisible)
         g_registry.subscribe(self._settingsChanged)
         self._settingsSubscribed = True
         session._syncInputMode()
-        session._hideLoading()
         session.notifyReady()
+        if session._fromLogin:
+          from gui.game_loading import loading
+          loading.getLoader().idl()
+        session._hideLoading()
 
         log.info('Local viewer ready; original minimap and camera attached')
       except Exception:
@@ -233,7 +239,7 @@ def install():
     g_modsListApi.addModification(id='wotstat.map-viewer', name=text('title'),
                   description=text('description'),
                   icon='gui/maps/wotstat/map_viewer/modslist.png',
-                  enabled=True, login=False, lobby=True, callback=showSelector)
+                  enabled=True, login=True, lobby=True, callback=showSelector)
 
   _installed = True
   log.info('Installed; open with F8 or ModsList')

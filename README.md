@@ -31,4 +31,28 @@
 
 ## Расширения
 
-Другие модификации могут добпалять свои разделы в параметры просмотра.
+Другие модификации могут добавлять свои разделы в параметры просмотра через публичный API:
+
+```python
+from wotstat_map_viewer import debug_panel
+
+SECTION_ID = 'my-mod'
+
+def on_change(control_id, value):
+  if control_id == 'enabled':
+    print 'My mod enabled:', value
+
+debug_panel.registerSection(SECTION_ID, u'Мой мод', [
+  dict(
+    id='enabled', 
+    type='checkbox', 
+    label=u'Включить',
+    value=False
+  ),
+], on_change)
+
+# При выгрузке мода:
+debug_panel.unregisterSection(SECTION_ID)
+```
+
+Доступные типы элементов: `checkbox`, `slider`, `dropdown`, `timeline` и `text`.
